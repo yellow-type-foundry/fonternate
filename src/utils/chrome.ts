@@ -3,6 +3,7 @@ import { FontSettings, ChromeMessage } from '../types';
 export const defaultFontSettings: FontSettings = {
   fontFamily: '',
   isEnabled: false,
+  textTransform: 'none',
   openTypeFeatures: {
     ss01: false,
     ss02: false,
@@ -27,6 +28,7 @@ export const defaultFontSettings: FontSettings = {
     swsh: false,
     calt: false,
     dlig: false,
+    liga: false,
   },
 };
 

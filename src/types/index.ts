@@ -1,6 +1,9 @@
+export type TextTransform = 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+
 export interface FontSettings {
   fontFamily: string;
   isEnabled: boolean;
+  textTransform: TextTransform;
   openTypeFeatures: {
     ss01: boolean;
     ss02: boolean;
@@ -25,6 +28,7 @@ export interface FontSettings {
     swsh: boolean;
     calt: boolean;
     dlig: boolean;
+    liga: boolean;
   };
 }
 
@@ -38,7 +42,8 @@ export type MessageType =
   | 'UPDATE_FONT_SETTINGS'
   | 'GET_FONT_SETTINGS'
   | 'TOGGLE_EXTENSION'
-  | 'RESET_FONTS';
+  | 'RESET_FONTS'
+  | 'CHECK_FEATURE_SUPPORT';
 
 export interface ChromeMessage {
   type: MessageType;

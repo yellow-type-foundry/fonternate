@@ -70,6 +70,25 @@ chrome.runtime.onMessage.addListener((message: ChromeMessage, sender, sendRespon
       sendResponse({ success: true });
       return true;
       
+    case 'CHECK_FEATURE_SUPPORT':
+      // Forward feature support check to content script
+      chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+        if (tabs[0]?.id) {
+          try {
+            const response = await chrome.tabs.sendMessage(tabs[0].id, {
+              type: 'CHECK_FEATURE_SUPPORT',
+              payload: message.payload
+            });
+            sendResponse(response || { isSupported: false });
+          } catch (error) {
+            sendResponse({ isSupported: false });
+          }
+        } else {
+          sendResponse({ isSupported: false });
+        }
+      });
+      return true; // Keep message channel open for async response
+      
     default:
       sendResponse({ error: 'Unknown message type' });
   }
@@ -80,36 +99,42 @@ chrome.runtime.onInstalled.addListener(async () => {
   console.log('Font Override Extension installed');
   
   // Initialize default settings if not already set
-  const settings = await getFontSettings();
-  if (!settings) {
-    await saveFontSettings({
-      fontFamily: '',
-      isEnabled: false,
-      openTypeFeatures: {
-        ss01: false,
-        ss02: false,
-        ss03: false,
-        ss04: false,
-        ss05: false,
-        ss06: false,
-        ss07: false,
-        ss08: false,
-        ss09: false,
-        ss10: false,
-        ss11: false,
-        ss12: false,
-        ss13: false,
-        ss14: false,
-        ss15: false,
-        ss16: false,
-        ss17: false,
-        ss18: false,
-        ss19: false,
-        ss20: false,
-        swsh: false,
-        calt: false,
-        dlig: false,
-      },
-    });
+  try {
+    const result = await chrome.storage.sync.get(['fontSettings']);
+    if (!result.fontSettings) {
+      await saveFontSettings({
+        fontFamily: '',
+        isEnabled: false,
+        textTransform: 'none',
+        openTypeFeatures: {
+          ss01: false,
+          ss02: false,
+          ss03: false,
+          ss04: false,
+          ss05: false,
+          ss06: false,
+          ss07: false,
+          ss08: false,
+          ss09: false,
+          ss10: false,
+          ss11: false,
+          ss12: false,
+          ss13: false,
+          ss14: false,
+          ss15: false,
+          ss16: false,
+          ss17: false,
+          ss18: false,
+          ss19: false,
+          ss20: false,
+          swsh: false,
+          calt: false,
+          dlig: false,
+          liga: false,
+        },
+      });
+    }
+  } catch (error) {
+    console.error('Error initializing settings:', error);
   }
 }); 
