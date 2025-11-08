@@ -19,9 +19,19 @@ export const StylisticSetsToggleGroup: React.FC<StylisticSetsToggleGroupProps> =
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
-  // Get the first selected set for display, or default to SS03 if none selected
-  const displaySet = selected.size > 0 ? Array.from(selected).sort()[0] : 3;
-  const displayText = `SS0${displaySet}`;
+  // Format display text for multiple selections
+  const getDisplayText = () => {
+    if (selected.size === 0) return 'SS01';
+    const sorted = Array.from(selected).sort();
+    if (sorted.length === 1) {
+      return `SS0${sorted[0]}`;
+    } else if (sorted.length <= 3) {
+      return sorted.map(num => `SS0${num}`).join(', ');
+    } else {
+      return `SS0${sorted[0]} +${sorted.length - 1}`;
+    }
+  };
+  const displayText = getDisplayText();
 
   // Available sets (1-9)
   const allSets = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -51,8 +61,8 @@ export const StylisticSetsToggleGroup: React.FC<StylisticSetsToggleGroupProps> =
         selected.forEach(num => onChange(num));
         setShowDropdown(false);
       } else {
-        // Turn on SS03 by default
-        onChange(3);
+        // Turn on SS01 by default
+        onChange(1);
       }
     }
   };
@@ -65,15 +75,10 @@ export const StylisticSetsToggleGroup: React.FC<StylisticSetsToggleGroupProps> =
 
   const handleSetSelect = (num: number) => {
     if (!disabled && isEnabled) {
-      // Clear all current selections and select the new one
-      selected.forEach(currentNum => {
-        if (currentNum !== num) {
-          onChange(currentNum);
-        }
-      });
       // Toggle the selected one (if already selected, deselect it; otherwise select it)
+      // Allow multiple selections - don't clear others
       onChange(num);
-      setShowDropdown(false);
+      // Keep dropdown open for multiple selections
     }
   };
 
