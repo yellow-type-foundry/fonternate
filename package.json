@@ -4,7 +4,7 @@
   "description": "A Chrome extension for testing custom fonts on live websites",
   "main": "index.js",
   "scripts": {
-    "build": "tsc && webpack --mode production && cp manifest.json popup.html dist/ && cp icon*.png dist/",
+    "build": "tsc && webpack --mode production && cp manifest.json popup.html dist/ && cp icon*.png dist/ && cp src/popup/*.svg dist/ 2>/dev/null || true && cp -r src/popup/assets dist/ 2>/dev/null || true",
     "dev": "webpack --mode development --watch",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist",

@@ -89,6 +89,132 @@ chrome.runtime.onMessage.addListener((message: ChromeMessage, sender, sendRespon
       });
       return true; // Keep message channel open for async response
       
+    case 'DETECT_CAPABILITIES':
+      // Forward capability detection to content script
+      // Use tabId from message, sender.tab, or query for active tab
+      const detectTabId = message.tabId || sender.tab?.id;
+      if (detectTabId) {
+        chrome.tabs.sendMessage(detectTabId, {
+          type: 'DETECT_CAPABILITIES',
+          payload: message.payload
+        }).then((response) => {
+          sendResponse(response || { capabilities: null });
+        }).catch((error) => {
+          sendResponse({ capabilities: null, error: error.message || 'Failed to detect capabilities' });
+        });
+      } else {
+        chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+          if (tabs[0]?.id) {
+            try {
+              const response = await chrome.tabs.sendMessage(tabs[0].id, {
+                type: 'DETECT_CAPABILITIES',
+                payload: message.payload
+              });
+              sendResponse(response || { capabilities: null });
+            } catch (error) {
+              sendResponse({ capabilities: null, error: error instanceof Error ? error.message : 'Failed to detect capabilities' });
+            }
+          } else {
+            sendResponse({ capabilities: null, error: 'No active tab' });
+          }
+        });
+      }
+      return true;
+      
+    case 'APPLY_FONT':
+      // Forward font application to content script
+      // Use tabId from message, sender.tab, or query for active tab
+      const applyFontTabId = message.tabId || sender.tab?.id;
+      if (applyFontTabId) {
+        chrome.tabs.sendMessage(applyFontTabId, {
+          type: 'APPLY_FONT',
+          payload: message.payload
+        }).then(() => {
+          sendResponse({ success: true });
+        }).catch((error) => {
+          sendResponse({ success: false, error: error.message || 'Failed to apply font' });
+        });
+      } else {
+        chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+          if (tabs[0]?.id) {
+            try {
+              await chrome.tabs.sendMessage(tabs[0].id, {
+                type: 'APPLY_FONT',
+                payload: message.payload
+              });
+              sendResponse({ success: true });
+            } catch (error) {
+              sendResponse({ success: false, error: error instanceof Error ? error.message : 'Failed to apply font' });
+            }
+          } else {
+            sendResponse({ success: false, error: 'No active tab' });
+          }
+        });
+      }
+      return true;
+      
+    case 'REVERT_TO_PREVIOUS_FONT':
+      // Forward previous font revert to content script
+      // Use tabId from message, sender.tab, or query for active tab
+      const revertTabId = message.tabId || sender.tab?.id;
+      if (revertTabId) {
+        chrome.tabs.sendMessage(revertTabId, {
+          type: 'REVERT_TO_PREVIOUS_FONT',
+          payload: message.payload
+        }).then(() => {
+          sendResponse({ success: true });
+        }).catch((error) => {
+          sendResponse({ success: false, error: error.message || 'Failed to revert font' });
+        });
+      } else {
+        chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+          if (tabs[0]?.id) {
+            try {
+              await chrome.tabs.sendMessage(tabs[0].id, {
+                type: 'REVERT_TO_PREVIOUS_FONT',
+                payload: message.payload
+              });
+              sendResponse({ success: true });
+            } catch (error) {
+              sendResponse({ success: false, error: error instanceof Error ? error.message : 'Failed to revert font' });
+            }
+          } else {
+            sendResponse({ success: false, error: 'No active tab' });
+          }
+        });
+      }
+      return true;
+      
+    case 'RESET_ALL':
+      // Forward reset all to content script
+      // Use tabId from message, sender.tab, or query for active tab
+      const resetTabId = message.tabId || sender.tab?.id;
+      if (resetTabId) {
+        chrome.tabs.sendMessage(resetTabId, {
+          type: 'RESET_ALL'
+        }).then(() => {
+          sendResponse({ success: true });
+        }).catch((error) => {
+          sendResponse({ success: false, error: error.message || 'Failed to reset' });
+        });
+      } else {
+        chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+          if (tabs[0]?.id) {
+            try {
+              await chrome.tabs.sendMessage(tabs[0].id, {
+                type: 'RESET_ALL'
+              });
+              sendResponse({ success: true });
+            } catch (error) {
+              sendResponse({ success: false, error: error instanceof Error ? error.message : 'Failed to reset' });
+            }
+          } else {
+            sendResponse({ success: false, error: 'No active tab' });
+          }
+        });
+      }
+      return true;
+      
     default:
       sendResponse({ error: 'Unknown message type' });
   }
@@ -106,6 +232,7 @@ chrome.runtime.onInstalled.addListener(async () => {
         fontFamily: '',
         isEnabled: false,
         textTransform: 'none',
+        fontWeight: 400,
         openTypeFeatures: {
           ss01: false,
           ss02: false,

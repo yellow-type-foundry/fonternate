@@ -1,419 +1,505 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
-import { FontTestState, FontSettings, TextTransform } from '../types';
-import { getFontSettings, saveFontSettings, sendMessage } from '../utils/chrome';
+import { AppState, FontCapabilities, TextTransform } from '../types';
+import { getAppState, saveAppState, sendMessage, defaultAppState } from '../utils/chrome';
+import {
+  FontNameInput,
+  TextTransformSegmented,
+  StylisticSetsToggleGroup,
+  SwashLevelSegmented,
+  LigatureToggles,
+  ContextualAltToggle,
+} from './components';
 import './popup.css';
 
-const Popup: React.FC = () => {
-  const [state, setState] = useState<FontTestState>({
-    settings: {
-      fontFamily: '',
-      isEnabled: false,
-      textTransform: 'none',
-      openTypeFeatures: {
-        ss01: false,
-        ss02: false,
-        ss03: false,
-        ss04: false,
-        ss05: false,
-        ss06: false,
-        ss07: false,
-        ss08: false,
-        ss09: false,
-        ss10: false,
-        ss11: false,
-        ss12: false,
-        ss13: false,
-        ss14: false,
-        ss15: false,
-        ss16: false,
-        ss17: false,
-        ss18: false,
-        ss19: false,
-        ss20: false,
-        swsh: false,
-        calt: false,
-        dlig: false,
-        liga: false,
-      },
-    },
-    isLoading: true,
-    error: null,
-  });
-
-  const [inputValue, setInputValue] = useState('');
-  const [fontError, setFontError] = useState(false);
-  const [unsupportedFeatures, setUnsupportedFeatures] = useState<Set<string>>(new Set());
+const Panel: React.FC = () => {
+  const [state, setState] = useState<AppState>(defaultAppState);
 
   useEffect(() => {
-    initializePopup();
+    initializePanel();
   }, []);
 
-  useEffect(() => {
-    // Check feature support when font is applied and enabled
-    if (state.settings.isEnabled && state.settings.fontFamily) {
-      checkFeatureSupport();
-    } else {
-      setUnsupportedFeatures(new Set());
-    }
-  }, [state.settings.isEnabled, state.settings.fontFamily, state.settings.openTypeFeatures]);
-
-  const initializePopup = async () => {
+  const initializePanel = async () => {
     try {
-      // Load saved settings
-      const settings = await getFontSettings();
-      
-      setState(prev => ({
-        ...prev,
-        settings,
-        isLoading: false,
-      }));
-
-      // Set input value to last used font
-      setInputValue(settings.fontFamily || '');
+      const savedState = await getAppState();
+      setState(savedState);
     } catch (error) {
       setState(prev => ({
         ...prev,
         error: error instanceof Error ? error.message : 'Failed to initialize',
-        isLoading: false,
+        loading: false,
       }));
     }
   };
 
-  const validateFont = (fontFamily: string): boolean => {
-    // Create a temporary element to test font availability
-    const testElement = document.createElement('span');
-    testElement.style.fontFamily = `${fontFamily}, monospace`;
-    testElement.style.position = 'absolute';
-    testElement.style.visibility = 'hidden';
-    testElement.style.fontSize = '72px';
-    testElement.textContent = 'abcdefghijklmnopqrstuvwxyz';
-    
-    document.body.appendChild(testElement);
-    
-    // Get the computed font family
-    const computedFont = window.getComputedStyle(testElement).fontFamily;
-    
-    // Clean up
-    document.body.removeChild(testElement);
-    
-    // Check if the font was actually applied (not fallback to monospace)
-    return computedFont.toLowerCase().includes(fontFamily.toLowerCase());
-  };
+  const applyFont = useCallback(async (stateToUse?: AppState | string, skipStateUpdate: boolean = false) => {
+    return new Promise<void>((resolve) => {
+      // Get current state first
+      setState(prev => {
+        const currentState: AppState = (stateToUse && typeof stateToUse !== 'string') 
+          ? stateToUse 
+          : prev;
+        const targetFontName = typeof stateToUse === 'string' 
+          ? stateToUse 
+          : currentState.fontName;
 
-  const applyFont = async () => {
-    if (!inputValue.trim()) return;
-
-    // Validate font
-    const isFontValid = validateFont(inputValue.trim());
-    setFontError(!isFontValid);
-
-    if (!isFontValid) {
-      return; // Don't apply if font is not found
-    }
-
-    const newSettings = {
-      ...state.settings,
-      fontFamily: inputValue.trim(),
-      isEnabled: true,
-    };
-    
-    setState(prev => ({
-      ...prev,
-      settings: newSettings,
-    }));
-
-    // Save to storage
-    await saveFontSettings(newSettings);
-    
-    // Apply to current page
-    try {
-      await sendMessage({
-        type: 'UPDATE_FONT_SETTINGS',
-        payload: newSettings,
-      });
-      // Check feature support after applying
-      setTimeout(() => checkFeatureSupport(), 100);
-    } catch (error) {
-      console.error('Failed to apply font:', error);
-    }
-  };
-
-  const resetFonts = async () => {
-    const newSettings = {
-      ...state.settings,
-      isEnabled: false,
-    };
-    
-    setState(prev => ({
-      ...prev,
-      settings: newSettings,
-    }));
-
-    // Clear font error when resetting
-    setFontError(false);
-
-    await saveFontSettings(newSettings);
-    
-    try {
-      await sendMessage({
-        type: 'RESET_FONTS',
-      });
-    } catch (error) {
-      console.error('Failed to reset fonts:', error);
-    }
-  };
-
-  const toggleOpenTypeFeature = async (feature: keyof FontSettings['openTypeFeatures']) => {
-    const newSettings = {
-      ...state.settings,
-      openTypeFeatures: {
-        ...state.settings.openTypeFeatures,
-        [feature]: !state.settings.openTypeFeatures[feature],
-      },
-    };
-    
-    setState(prev => ({
-      ...prev,
-      settings: newSettings,
-    }));
-
-    await saveFontSettings(newSettings);
-    
-    // Re-apply if currently enabled
-    if (newSettings.isEnabled) {
-      try {
-        await sendMessage({
-          type: 'UPDATE_FONT_SETTINGS',
-          payload: newSettings,
-        });
-      } catch (error) {
-        console.error('Failed to update OpenType features:', error);
-      }
-    }
-  };
-
-  const handleTextTransformChange = async (transform: TextTransform) => {
-    const newSettings = {
-      ...state.settings,
-      textTransform: transform,
-    };
-    
-    setState(prev => ({
-      ...prev,
-      settings: newSettings,
-    }));
-
-    await saveFontSettings(newSettings);
-    
-    // Re-apply if currently enabled
-    if (newSettings.isEnabled) {
-      try {
-        await sendMessage({
-          type: 'UPDATE_FONT_SETTINGS',
-          payload: newSettings,
-        });
-      } catch (error) {
-        console.error('Failed to update text transform:', error);
-      }
-    }
-  };
-
-  const checkFeatureSupport = useCallback(async () => {
-    if (!state.settings.fontFamily || !state.settings.isEnabled) return;
-    
-    const unsupported = new Set<string>();
-    
-    // Check each active stylistic set
-    for (let i = 1; i <= 9; i++) {
-      const ssKey = `ss0${i}` as keyof FontSettings['openTypeFeatures'];
-      if (state.settings.openTypeFeatures[ssKey]) {
-        try {
-          const response = await sendMessage({
-            type: 'CHECK_FEATURE_SUPPORT',
-            payload: {
-              fontFamily: state.settings.fontFamily,
-              feature: ssKey,
-            },
-          });
-          if (!response?.isSupported) {
-            unsupported.add(ssKey);
-          }
-        } catch (error) {
-          console.error(`Failed to check support for ${ssKey}:`, error);
+        if (!targetFontName?.trim()) {
+          resolve();
+          return prev;
         }
+
+        console.log('[Fonternate] applyFont called with:', {
+          fontName: targetFontName,
+          stylisticSets: Array.from(currentState.stylisticSets),
+          skipStateUpdate
+        });
+
+        // If skipStateUpdate is true, don't change any state - just apply the font
+        if (skipStateUpdate) {
+          sendMessage({
+            type: 'APPLY_FONT',
+            payload: {
+              fontName: targetFontName,
+              textTransform: currentState.textTransform,
+              stylisticSets: Array.from(currentState.stylisticSets),
+              swashLevel: currentState.swashLevel,
+              liga: currentState.liga,
+              dlig: currentState.dlig,
+              calt: currentState.calt,
+            },
+          })
+            .then(() => {
+              // Save state without updating React state
+              // When switching fonts, save the previous font as lastFontName
+              const newLastFontName = (prev.fontName && prev.fontName !== targetFontName) 
+                ? prev.fontName 
+                : prev.lastFontName;
+              
+              const stateForSave: AppState = {
+                ...prev,
+                fontName: targetFontName,
+                lastFontName: newLastFontName,
+                textTransform: currentState.textTransform,
+                stylisticSets: currentState.stylisticSets,
+                swashLevel: currentState.swashLevel,
+                liga: currentState.liga,
+                dlig: currentState.dlig,
+                calt: currentState.calt,
+              };
+              saveAppState(stateForSave);
+              resolve();
+            })
+            .catch((error) => {
+              resolve();
+            });
+          return prev; // Don't update state at all
+        }
+
+        // Set loading state
+        const loadingState = { ...prev, loading: true, error: null };
+        
+        // Apply font asynchronously
+        sendMessage({
+          type: 'APPLY_FONT',
+          payload: {
+            fontName: targetFontName,
+            textTransform: currentState.textTransform,
+            stylisticSets: Array.from(currentState.stylisticSets),
+            swashLevel: currentState.swashLevel,
+            liga: currentState.liga,
+            dlig: currentState.dlig,
+            calt: currentState.calt,
+          },
+        })
+          .then(() => {
+            setState(prevState => {
+              // When switching fonts, save the previous font as lastFontName
+              const newLastFontName = (prevState.fontName && prevState.fontName !== targetFontName) 
+                ? prevState.fontName 
+                : prevState.lastFontName;
+              
+              const newState: AppState = {
+                ...prevState,
+                fontName: targetFontName,
+                lastFontName: newLastFontName,
+                loading: false,
+                error: null,
+              };
+              
+              saveAppState(newState);
+              resolve();
+              return newState;
+            });
+          })
+          .catch((error) => {
+            setState(prevState => ({
+              ...prevState,
+              loading: false,
+              error: error instanceof Error ? error.message : 'Failed to apply font',
+            }));
+            resolve();
+          });
+
+        return loadingState;
+      });
+    });
+  }, []);
+
+  const detectCapabilities = useCallback(async (fontName: string) => {
+    if (!fontName.trim()) {
+      setState(prev => ({
+        ...prev,
+        capabilities: defaultAppState.capabilities,
+        error: null,
+        loading: false,
+      }));
+      return;
+    }
+
+    setState(prev => {
+      // Don't detect if it's the same font that's already loaded and capabilities are known
+      if (prev.fontName === fontName && !prev.loading && prev.capabilities.ss.length > 0) {
+        return prev;
       }
-    }
-    
-    setUnsupportedFeatures(unsupported);
-  }, [state.settings.fontFamily, state.settings.isEnabled, state.settings.openTypeFeatures]);
+      // Don't update fontName here - it's already updated by handleFontNameChange
+      return { ...prev, loading: true, error: null };
+    });
 
-  useEffect(() => {
-    // Check feature support when font is applied and enabled
-    if (state.settings.isEnabled && state.settings.fontFamily) {
-      checkFeatureSupport();
-    } else {
-      setUnsupportedFeatures(new Set());
-    }
-  }, [state.settings.isEnabled, state.settings.fontFamily, state.settings.openTypeFeatures, checkFeatureSupport]);
+    try {
+      const response = await sendMessage({
+        type: 'DETECT_CAPABILITIES',
+        payload: { fontName },
+      });
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      applyFont();
+      const capabilities: FontCapabilities = response?.capabilities || defaultAppState.capabilities;
+      
+      setState(prev => {
+        // Only update capabilities if this is still the current font name (user might have changed it)
+        if (prev.fontName === fontName) {
+          return {
+            ...prev,
+            capabilities,
+            loading: false,
+            error: null,
+          };
+        }
+        return {
+          ...prev,
+          capabilities,
+          loading: false,
+          error: null,
+        };
+      });
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        error: error instanceof Error ? error.message : 'Failed to detect font capabilities',
+      }));
+    }
+  }, [applyFont]);
+
+  const handleFontNameChange = (fontName: string) => {
+    setState(prev => ({ ...prev, fontName }));
+  };
+
+  const handleTextTransformChange = async (textTransform: TextTransform) => {
+    setState(prev => {
+      const newState = { ...prev, textTransform };
+      saveAppState(newState);
+      if (prev.fontName) {
+        applyFont(newState);
+      }
+      return newState;
+    });
+  };
+
+  const handleStylisticSetToggle = async (num: number) => {
+    console.log('[Fonternate] Toggling stylistic set:', num);
+    setState(prev => {
+      const newSets = new Set(prev.stylisticSets);
+      const wasSelected = newSets.has(num);
+      if (wasSelected) {
+        newSets.delete(num);
+      } else {
+        newSets.add(num);
+      }
+      
+      console.log('[Fonternate] New stylistic sets:', Array.from(newSets));
+      
+      const newState = { ...prev, stylisticSets: newSets };
+      saveAppState(newState);
+      
+      // Always apply font if fontName exists, even if it hasn't changed
+      // This ensures stylistic sets are applied immediately
+      if (newState.fontName?.trim()) {
+        console.log('[Fonternate] Applying font with stylistic sets:', {
+          fontName: newState.fontName,
+          stylisticSets: Array.from(newSets)
+        });
+        // Apply font with the new state immediately
+        applyFont(newState);
+      } else {
+        console.log('[Fonternate] No font name, skipping font application');
+      }
+      
+      return newState;
+    });
+  };
+
+  const handleSwashLevelChange = async (level: number) => {
+    // Swash is ON/OFF only - normalize to 0 (OFF) or 1 (ON)
+    const swashValue = level > 0 ? 1 : 0;
+    setState(prev => {
+      const newState = { ...prev, swashLevel: swashValue };
+      saveAppState(newState);
+      if (prev.fontName) {
+        applyFont(newState);
+      }
+      return newState;
+    });
+  };
+
+  const handleLigatureChange = async (newLiga: boolean, newDlig: boolean) => {
+    // Allow both ligature types to be active at the same time
+    setState(prev => {
+      const newState = {
+        ...prev,
+        liga: newLiga,
+        dlig: newDlig,
+      };
+      saveAppState(newState);
+      if (prev.fontName) {
+        applyFont(newState);
+      }
+      return newState;
+    });
+  };
+
+  const handleCaltChange = async (value: boolean) => {
+    setState(prev => {
+      const newState = { ...prev, calt: value };
+      saveAppState(newState);
+      if (prev.fontName) {
+        applyFont(newState);
+      }
+      return newState;
+    });
+  };
+
+  const handlePreviousFont = async () => {
+    // Toggle between current font and previous font
+    if (!state.lastFontName && !state.fontName) return;
+
+    try {
+      // If we have a current font and a previous font, swap them
+      if (state.fontName && state.lastFontName) {
+        // Swap: current becomes previous, previous becomes current
+        const newFontName = state.lastFontName;
+        const newLastFontName = state.fontName;
+
+        await sendMessage({
+          type: 'APPLY_FONT',
+          payload: {
+            fontName: newFontName,
+            textTransform: state.textTransform,
+            stylisticSets: Array.from(state.stylisticSets),
+            swashLevel: state.swashLevel,
+            liga: state.liga,
+            dlig: state.dlig,
+            calt: state.calt,
+          },
+        });
+
+        const newState: AppState = {
+          ...state,
+          fontName: newFontName,
+          lastFontName: newLastFontName,
+          loading: false,
+          error: null,
+        };
+
+        setState(newState);
+        await saveAppState(newState);
+        await detectCapabilities(newFontName);
+      } else if (state.lastFontName && !state.fontName) {
+        // No current font, apply the previous one
+        await sendMessage({
+          type: 'APPLY_FONT',
+          payload: {
+            fontName: state.lastFontName,
+            textTransform: state.textTransform,
+            stylisticSets: Array.from(state.stylisticSets),
+            swashLevel: state.swashLevel,
+            liga: state.liga,
+            dlig: state.dlig,
+            calt: state.calt,
+          },
+        });
+
+        const newState: AppState = {
+          ...state,
+          fontName: state.lastFontName,
+          lastFontName: '', // Clear last since we're using it now
+          loading: false,
+          error: null,
+        };
+
+        setState(newState);
+        await saveAppState(newState);
+        await detectCapabilities(state.lastFontName);
+      } else if (state.fontName && !state.lastFontName) {
+        // We have a current font but no previous - remove current font
+        await sendMessage({ type: 'RESET_ALL' });
+
+        const newState: AppState = {
+          ...state,
+          fontName: '',
+          lastFontName: state.fontName, // Save current as previous
+          loading: false,
+          error: null,
+        };
+
+        setState(newState);
+        await saveAppState(newState);
+      }
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        error: error instanceof Error ? error.message : 'Failed to revert to previous font',
+      }));
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-    // Clear font error when user starts typing
-    if (fontError) {
-      setFontError(false);
+  const handleReset = async () => {
+    try {
+      await sendMessage({ type: 'RESET_ALL' });
+
+      // Clear font name and reset all settings to defaults
+      const resetState: AppState = {
+        ...state,
+        fontName: '',
+        lastFontName: state.fontName || state.lastFontName, // Save current font as last if it exists
+        textTransform: 'none',
+        stylisticSets: new Set<number>(),
+        swashLevel: 0,
+        liga: true,
+        dlig: false,
+        calt: true,
+        capabilities: defaultAppState.capabilities,
+        error: null,
+        loading: false,
+      };
+
+      setState(resetState);
+      await saveAppState(resetState);
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        error: error instanceof Error ? error.message : 'Failed to reset',
+      }));
     }
   };
-
-  if (state.isLoading) {
-    return (
-      <div className="popup-container flex items-center justify-center">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-black"></div>
-      </div>
-    );
-  }
-
-  if (state.error) {
-    return (
-      <div className="popup-container p-4 text-red-600">
-        <h3 className="font-semibold mb-2">Error</h3>
-        <p className="text-sm">{state.error}</p>
-      </div>
-    );
-  }
 
   return (
-    <div className="popup-container">
-      <div className="popup-content">
-        {/* Input Section */}
-        <div className="input-section">
-          <input
-            type="text"
-            value={inputValue}
-            onChange={handleInputChange}
-            onKeyPress={handleKeyPress}
-            placeholder="ENTER FONT NAME HERE"
-            className="font-input"
+    <div className="popup-content">
+      <div className="popup-main-content">
+        <FontNameInput
+          value={state.fontName}
+          onChange={handleFontNameChange}
+          onDetectCapabilities={detectCapabilities}
+          onApplyFont={(fontName) => {
+            // Use the font name from the input if provided, otherwise use state
+            const fontNameToApply = fontName || state.fontName;
+            if (fontNameToApply?.trim()) {
+              // Skip all state updates to prevent input refresh when applying via Enter
+              applyFont(fontNameToApply, true);
+            }
+          }}
+          loading={state.loading}
+          error={state.error || undefined}
+        />
+
+        <div className="divider-line"></div>
+
+        <TextTransformSegmented
+          value={state.textTransform}
+          onChange={handleTextTransformChange}
+          disabled={state.loading}
+        />
+
+        <div className="divider-line"></div>
+
+        <StylisticSetsToggleGroup
+          selected={state.stylisticSets}
+          available={state.capabilities.ss}
+          onChange={handleStylisticSetToggle}
+          disabled={state.loading}
+        />
+
+        <div className="divider-line"></div>
+
+        <div className="opentype-features-container">
+          <SwashLevelSegmented
+            value={state.swashLevel}
+            availableLevels={state.capabilities.swashLevels}
+            onChange={handleSwashLevelChange}
+            disabled={state.loading}
           />
-          {fontError && (
-            <div className="font-error show">
-              Font not found
-            </div>
-          )}
+
+          <LigatureToggles
+            liga={state.liga}
+            dlig={state.dlig}
+            supportsLIGA={state.capabilities.supportsLIGA}
+            supportsDLIG={state.capabilities.supportsDLIG}
+            onChange={handleLigatureChange}
+            disabled={state.loading}
+          />
+
+          <ContextualAltToggle
+            value={state.calt}
+            supportsCALT={state.capabilities.supportsCALT}
+            onChange={handleCaltChange}
+            disabled={state.loading}
+          />
         </div>
+      </div>
 
-        {/* Text Transform Section */}
-        <div className="text-transform-section">
-          <div className="opentype-label-header">TEXT TRANSFORM</div>
-          <div className="text-transform-buttons">
-            <button
-              onClick={() => handleTextTransformChange('none')}
-              className={`text-transform-btn ${state.settings.textTransform === 'none' ? 'active' : ''}`}
-            >
-              NORMAL
-            </button>
-            <button
-              onClick={() => handleTextTransformChange('uppercase')}
-              className={`text-transform-btn ${state.settings.textTransform === 'uppercase' ? 'active' : ''}`}
-            >
-              UPPERCASE
-            </button>
-            <button
-              onClick={() => handleTextTransformChange('lowercase')}
-              className={`text-transform-btn ${state.settings.textTransform === 'lowercase' ? 'active' : ''}`}
-            >
-              LOWERCASE
-            </button>
-            <button
-              onClick={() => handleTextTransformChange('capitalize')}
-              className={`text-transform-btn ${state.settings.textTransform === 'capitalize' ? 'active' : ''}`}
-            >
-              CAPITALIZE
-            </button>
-          </div>
-        </div>
+      <div className="divider-line"></div>
 
-        {/* OpenType Features */}
-        <div className="opentype-section">
-          {/* Stylistic Sets */}
-          <div className="stylistic-sets-container">
-            <div className="opentype-label-header">STYLISTIC SETS</div>
-            <div className="stylistic-tabs">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => {
-                const ssKey = `ss0${num}` as keyof FontSettings['openTypeFeatures'];
-                const isActive = state.settings.openTypeFeatures[ssKey];
-                const isUnsupported = unsupportedFeatures.has(ssKey);
-                return (
-                  <button
-                    key={ssKey}
-                    onClick={() => toggleOpenTypeFeature(ssKey)}
-                    className={`stylistic-tab ${isActive ? 'active' : ''} ${isUnsupported ? 'unsupported' : ''}`}
-                  >
-                    {num}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Other Features Grid */}
-          <div className="opentype-grid">
-            <button
-              onClick={() => toggleOpenTypeFeature('swsh')}
-              className={`opentype-block ${state.settings.openTypeFeatures.swsh ? 'active' : ''}`}
-            >
-              <div className="opentype-label">SWASHES</div>
-              <div className="opentype-status">{state.settings.openTypeFeatures.swsh ? 'ON' : 'OFF'}</div>
-            </button>
-
-            <button
-              onClick={() => toggleOpenTypeFeature('liga')}
-              className={`opentype-block ${state.settings.openTypeFeatures.liga ? 'active' : ''}`}
-            >
-              <div className="opentype-label">STANDARD LIGATURES</div>
-              <div className="opentype-status">{state.settings.openTypeFeatures.liga ? 'ON' : 'OFF'}</div>
-            </button>
-
-            <button
-              onClick={() => toggleOpenTypeFeature('calt')}
-              className={`opentype-block ${state.settings.openTypeFeatures.calt ? 'active' : ''}`}
-            >
-              <div className="opentype-label">CONTEXTUAL ALTERNATES</div>
-              <div className="opentype-status">{state.settings.openTypeFeatures.calt ? 'ON' : 'OFF'}</div>
-            </button>
-
-            <button
-              onClick={() => toggleOpenTypeFeature('dlig')}
-              className={`opentype-block ${state.settings.openTypeFeatures.dlig ? 'active' : ''}`}
-            >
-              <div className="opentype-label">DISCRET. LIGATURES</div>
-              <div className="opentype-status">{state.settings.openTypeFeatures.dlig ? 'ON' : 'OFF'}</div>
-            </button>
-          </div>
-        </div>
-
-        {/* Button Section */}
-        <div className="button-section">
-          <button
-            onClick={applyFont}
-            disabled={!inputValue.trim()}
-            className="apply-button"
-          >
-            APPLY
-          </button>
-          <button
-            onClick={resetFonts}
-            className="reset-button"
-          >
-            RESET
-          </button>
-        </div>
+      <div className="button-section">
+        <button
+          onClick={handlePreviousFont}
+          className="previous-font-button"
+          disabled={(!state.lastFontName && !state.fontName) || state.loading}
+        >
+          <img 
+            src={chrome.runtime.getURL('assets/646c2af72478b4a4aeefa254a9a4b524d296daf8.svg')}
+            alt="" 
+            className="button-icon"
+            onError={(e) => {
+              // Fallback if icon not found
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+          PREVIOUS
+        </button>
+        <button
+          onClick={handleReset}
+          className="reset-button"
+          disabled={state.loading}
+        >
+          <img 
+            src={chrome.runtime.getURL('assets/b572e4dcbc7b3b49f361608582c47a458a5b647e.svg')}
+            alt="" 
+            className="button-icon"
+            onError={(e) => {
+              // Fallback if icon not found
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+          RESET
+        </button>
       </div>
     </div>
   );
@@ -423,5 +509,5 @@ const Popup: React.FC = () => {
 const container = document.getElementById('root');
 if (container) {
   const root = createRoot(container);
-  root.render(<Popup />);
-} 
+  root.render(<Panel />);
+}
