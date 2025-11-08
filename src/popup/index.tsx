@@ -120,6 +120,7 @@ const Panel: React.FC = () => {
             liga: currentState.liga,
             dlig: currentState.dlig,
             calt: currentState.calt,
+            textStyles: Array.from(currentState.textStyles),
           },
         })
           .then(() => {
@@ -367,6 +368,7 @@ const Panel: React.FC = () => {
             liga: state.liga,
             dlig: state.dlig,
             calt: state.calt,
+            textStyles: Array.from(state.textStyles),
           },
         });
 

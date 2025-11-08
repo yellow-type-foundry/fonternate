@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface FontNameInputProps {
   value: string;
@@ -17,16 +17,18 @@ export const FontNameInput: React.FC<FontNameInputProps> = ({
   loading,
   error,
 }) => {
-  // Use local state that syncs with prop when prop is cleared (e.g., after Reset)
+  // Use local state that syncs with prop when prop changes externally (e.g., after Reset or Previous Font)
   const [localValue, setLocalValue] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const isFocusedRef = useRef(false);
   
-  // Sync localValue with prop when prop is cleared (e.g., after Reset)
+  // Sync localValue with prop when prop changes, but only if input is not focused (user not typing)
   useEffect(() => {
-    if (!value && localValue) {
-      // Only sync when prop is cleared - don't sync when user is typing
-      setLocalValue('');
+    if (!isFocusedRef.current && value !== localValue) {
+      // Sync when prop changes and input is not focused
+      setLocalValue(value);
     }
-  }, [value]);
+  }, [value, localValue]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -59,10 +61,17 @@ export const FontNameInput: React.FC<FontNameInputProps> = ({
   return (
     <div className="font-input-container">
       <input
+        ref={inputRef}
         type="text"
         value={localValue}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
+        onFocus={() => {
+          isFocusedRef.current = true;
+        }}
+        onBlur={() => {
+          isFocusedRef.current = false;
+        }}
         placeholder="Enter font name"
         className={`font-input ${error ? 'error' : ''} ${loading ? 'loading' : ''}`}
         disabled={loading}

@@ -17,7 +17,7 @@ export const SwashLevelSegmented: React.FC<SwashLevelSegmentedProps> = ({
   const isOn = value > 0;
   // Swash is available if there are any levels available (including level 0 for OFF)
   const isAvailable = availableLevels.length > 0 || availableLevels.includes(0) || availableLevels.length === 0;
-  const toggleIcon = chrome.runtime.getURL('assets/f83045a8da0c6eaee8edbbd12f6c188c923b60be.svg');
+  const toggleIcon = chrome.runtime.getURL('assets/bb8b02ee61663c03686c8906db3c0ef84f6a282f.svg');
 
   const handleToggle = () => {
     if (!disabled) {

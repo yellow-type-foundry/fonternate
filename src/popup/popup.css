@@ -530,7 +530,7 @@
   height: 24px;
   border-radius: 100px;
   position: absolute;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
   z-index: 1;
   top: 50%;
   transform: translateY(-50%);
@@ -539,15 +539,20 @@
 .toggle-switch.active .toggle-switch-handle {
   transform: translate(28px, -50%);
   background: linear-gradient(to bottom, #fde9e7, #ffffff);
-  border: 0.5px solid #ffb5a3;
-  box-shadow: none;
+  border: none;
+  box-shadow: 
+    inset 0 0 0 0.5px #FFB5A3,
+    0px -1px 3px 0px rgba(255, 255, 255, 0.7),
+    0px -1px 2px 0px rgba(247, 168, 207, 1),
+    0px 1px 2px 0px rgba(248, 116, 75, 0.5),
+    0px 1px 5px 0px rgba(162, 43, 6, 0.5);
 }
 
 .toggle-switch:not(.active) .toggle-switch-handle {
   transform: translate(4px, -50%);
   background: white;
   border: none;
-  box-shadow: inset 0px -1px 1px 0px rgba(0, 0, 0, 0.1), inset 0px 1px 1px 0px rgba(255, 255, 255, 0.8);
+  box-shadow: inset 0px -1px 1px 0px rgba(0, 0, 0, 0.1), inset 0px 1px 1px 0px rgba(255, 255, 255, 0.8), inset 0 0 0 0.5px #FFB5A3;
 }
 
 .toggle-switch-icon {
@@ -786,7 +791,7 @@
 }
 
 .popup-main-content {
-  padding: 17.25px 17.25px 0 17.25px;
+  padding: 20px 20px 0 20px;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -800,7 +805,7 @@
   gap: 12px;
   width: 100%;
   height: auto;
-  padding: 0 23px 23px 23px;
+  padding: 0 20px 20px 20px;
   box-sizing: border-box;
   align-items: center;
   min-width: 0;
