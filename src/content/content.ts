@@ -215,6 +215,7 @@ class FontInjector {
     liga: boolean;
     dlig: boolean;
     calt: boolean;
+    textStyles?: string[];
   }) {
     if (!payload.fontName?.trim()) {
       this.removeFontStyle();
@@ -233,7 +234,14 @@ class FontInjector {
     this.styleElement = document.createElement('style');
     this.styleElement.id = 'font-override-style';
     
-    let css = `* { font-family: "${payload.fontName}" !important;`;
+    // Build CSS selector based on textStyles
+    // If textStyles is empty or not provided, apply to all elements (*)
+    // Otherwise, apply only to selected text styles
+    const selector = (payload.textStyles && payload.textStyles.length > 0)
+      ? payload.textStyles.join(', ')
+      : '*';
+    
+    let css = `${selector} { font-family: "${payload.fontName}" !important;`;
     
     // Add text-transform if set
     if (payload.textTransform && payload.textTransform !== 'none') {
@@ -393,6 +401,7 @@ class FontInjector {
       liga: appState.liga,
       dlig: appState.dlig,
       calt: appState.calt,
+      textStyles: Array.from(appState.textStyles),
     });
   }
 }

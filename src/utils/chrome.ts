@@ -49,6 +49,7 @@ export const defaultAppState: AppState = {
   liga: true,
   dlig: false,
   calt: true,
+  textStyles: new Set<string>(),
   capabilities: defaultCapabilities,
   loading: false,
   error: null,
@@ -135,6 +136,9 @@ export const getAppState = async (): Promise<AppState> => {
         if (Array.isArray(state.stylisticSets)) {
           state.stylisticSets = new Set(state.stylisticSets);
         }
+        if (Array.isArray(state.textStyles)) {
+          state.textStyles = new Set(state.textStyles);
+        }
         return state;
       }
     }
@@ -152,6 +156,7 @@ export const saveAppState = async (state: AppState): Promise<void> => {
       const stateToSave = {
         ...state,
         stylisticSets: Array.from(state.stylisticSets),
+        textStyles: Array.from(state.textStyles),
       };
       await chrome.storage.sync.set({ appState: stateToSave });
       

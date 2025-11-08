@@ -85,7 +85,8 @@
   text-transform: uppercase;
   cursor: pointer;
   white-space: nowrap;
-  flex-shrink: 0;
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -146,12 +147,13 @@
   cursor: pointer;
   white-space: nowrap;
   flex: 1;
+  min-width: 0;
   height: 41px;
   display: flex;
   align-items: center;
   gap: 0;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: 18px;
   transition: opacity 0.2s ease;
 }
 
@@ -177,12 +179,13 @@
   cursor: pointer;
   white-space: nowrap;
   flex: 1;
+  min-width: 0;
   height: 41px;
   display: flex;
   align-items: center;
   gap: 0;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: 18px;
   transition: opacity 0.2s ease;
 }
 
@@ -779,7 +782,7 @@
   background: white;
   border: none;
   border-radius: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .popup-main-content {
@@ -789,16 +792,19 @@
   gap: 0;
   width: 100%;
   box-sizing: border-box;
+  overflow: visible;
 }
 
 .button-section {
   display: flex;
-  gap: 23px;
+  gap: 12px;
   width: 100%;
   height: auto;
   padding: 0 23px 23px 23px;
   box-sizing: border-box;
   align-items: center;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* Hide default checkbox styling */

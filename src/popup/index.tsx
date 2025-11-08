@@ -9,6 +9,7 @@ import {
   SwashLevelSegmented,
   LigatureToggles,
   ContextualAltToggle,
+  TextStylesToggleGroup,
 } from './components';
 import './popup.css';
 
@@ -66,6 +67,7 @@ const Panel: React.FC = () => {
               liga: currentState.liga,
               dlig: currentState.dlig,
               calt: currentState.calt,
+              textStyles: Array.from(currentState.textStyles),
             },
           })
             .then(() => {
@@ -85,6 +87,7 @@ const Panel: React.FC = () => {
                 liga: currentState.liga,
                 dlig: currentState.dlig,
                 calt: currentState.calt,
+                textStyles: currentState.textStyles,
               };
               saveAppState(stateForSave);
               
@@ -295,6 +298,27 @@ const Panel: React.FC = () => {
     });
   };
 
+  const handleTextStyleToggle = async (style: string) => {
+    setState(prev => {
+      const newStyles = new Set(prev.textStyles);
+      const wasSelected = newStyles.has(style);
+      if (wasSelected) {
+        newStyles.delete(style);
+      } else {
+        newStyles.add(style);
+      }
+      
+      const newState = { ...prev, textStyles: newStyles };
+      saveAppState(newState);
+      
+      if (newState.fontName?.trim()) {
+        applyFont(newState);
+      }
+      
+      return newState;
+    });
+  };
+
   const handlePreviousFont = async () => {
     // Toggle between current font and previous font
     if (!state.lastFontName && !state.fontName) return;
@@ -316,6 +340,7 @@ const Panel: React.FC = () => {
             liga: state.liga,
             dlig: state.dlig,
             calt: state.calt,
+            textStyles: Array.from(state.textStyles),
           },
         });
 
@@ -394,6 +419,7 @@ const Panel: React.FC = () => {
         liga: false,
         dlig: false,
         calt: false,
+        textStyles: new Set<string>(),
         capabilities: defaultAppState.capabilities,
         error: null,
         loading: false,
@@ -481,22 +507,45 @@ const Panel: React.FC = () => {
           />
         </div>
         <div className="feature-gap"></div>
+
+        <div className="feature-row-wrapper">
+          <TextStylesToggleGroup
+            selected={state.textStyles}
+            onChange={handleTextStyleToggle}
+            disabled={state.loading}
+          />
+        </div>
+        <div className="feature-gap"></div>
       </div>
 
       <div className="button-section">
-        <button
-          onClick={handlePreviousFont}
-          className="previous-font-button"
-          disabled={(!state.lastFontName && !state.fontName) || state.loading}
-        >
-          PREVIOUS FONT
-        </button>
         <button
           onClick={handleReset}
           className="reset-button"
           disabled={state.loading}
         >
-          RESET ALL
+          RESET
+        </button>
+        <button
+          onClick={handlePreviousFont}
+          className="previous-font-button"
+          disabled={(!state.lastFontName && !state.fontName) || state.loading}
+        >
+          PREVIOUS
+        </button>
+        <button
+          onClick={() => {
+            const fontNameToApply = state.fontName?.trim();
+            if (!state.loading && fontNameToApply) {
+              detectCapabilities(fontNameToApply).then(() => {
+                applyFont(fontNameToApply, true);
+              });
+            }
+          }}
+          className="apply-button"
+          disabled={state.loading || !state.fontName?.trim()}
+        >
+          APPLY
         </button>
       </div>
     </div>

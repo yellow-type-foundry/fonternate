@@ -16,6 +16,7 @@ export interface AppState {
   liga: boolean;                    // standard ligatures; default true
   dlig: boolean;                    // discretionary ligatures; default false
   calt: boolean;                    // contextual alternates; default true
+  textStyles: Set<string>;          // e.g., ['h1', 'h2', 'p']; multi-select; default empty
   capabilities: FontCapabilities;   // detected per selected font
   loading: boolean;                 // while applying or probing features
   error?: string | null;            // UX toast/message

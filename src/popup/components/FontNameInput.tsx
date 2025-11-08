@@ -67,27 +67,6 @@ export const FontNameInput: React.FC<FontNameInputProps> = ({
         className={`font-input ${error ? 'error' : ''} ${loading ? 'loading' : ''}`}
         disabled={loading}
       />
-      <button
-        onClick={() => {
-          const fontNameToApply = localValue.trim();
-          if (!loading && fontNameToApply) {
-            // Detect capabilities first, then apply font
-            if (onDetectCapabilities) {
-              onDetectCapabilities(fontNameToApply).then(() => {
-                if (onApplyFont) {
-                  onApplyFont(fontNameToApply);
-                }
-              });
-            } else if (onApplyFont) {
-              onApplyFont(fontNameToApply);
-            }
-          }
-        }}
-        className="apply-button"
-        disabled={loading || !localValue.trim()}
-      >
-        APPLY
-      </button>
       {error && (
         <div className="font-error show">
           {error}
