@@ -17,18 +17,30 @@ export const LigatureToggles: React.FC<LigatureTogglesProps> = ({
   onChange,
   disabled = false,
 }) => {
-  const handleLigaClick = () => {
+  const isEnabled = liga || dlig;
+  const toggleIcon = chrome.runtime.getURL('assets/bb8b02ee61663c03686c8906db3c0ef84f6a282f.svg');
+
+  const handleToggleSwitch = () => {
     if (!disabled) {
+      // Toggle both ligatures on/off
+      if (isEnabled) {
+        onChange(false, false);
+      } else {
+        onChange(true, false); // Default to .liga when enabling
+      }
+    }
+  };
+
+  const handleLigaClick = () => {
+    if (!disabled && isEnabled) {
       // Toggle .liga, keep .dlig as is
-      // Allow clicking even if not detected as available - detection might not be perfect
       onChange(!liga, dlig);
     }
   };
 
   const handleDligClick = () => {
-    if (!disabled) {
+    if (!disabled && isEnabled) {
       // Toggle .dlig, keep .liga as is
-      // Allow clicking even if not detected as available - detection might not be perfect
       onChange(liga, !dlig);
     }
   };
@@ -38,21 +50,34 @@ export const LigatureToggles: React.FC<LigatureTogglesProps> = ({
       <div className="opentype-feature-label">Ligatures</div>
       <div className="opentype-feature-toggle">
         <button
-          onClick={handleLigaClick}
-          className={`opentype-toggle-btn ${liga ? 'active' : ''} ${!supportsLIGA && supportsLIGA !== undefined ? 'unsupported' : ''}`}
+          onClick={handleToggleSwitch}
+          className={`toggle-switch ${isEnabled ? 'active' : ''}`}
           disabled={disabled}
-          title={!supportsLIGA && supportsLIGA !== undefined ? 'Not detected for this font' : ''}
+          type="button"
         >
-          .liga
+          <div className="toggle-switch-handle"></div>
+          <img src={toggleIcon} alt="" className="toggle-switch-icon" />
         </button>
-        <button
-          onClick={handleDligClick}
-          className={`opentype-toggle-btn ${dlig ? 'active' : ''} ${!supportsDLIG && supportsDLIG !== undefined ? 'unsupported' : ''}`}
-          disabled={disabled}
-          title={!supportsDLIG && supportsDLIG !== undefined ? 'Not detected for this font' : ''}
-        >
-          .dlig
-        </button>
+        <div className="ligature-buttons-container">
+          <button
+            onClick={handleLigaClick}
+            className={`ligature-button ${liga ? 'active' : ''} ${!supportsLIGA && supportsLIGA !== undefined ? 'unsupported' : ''} ${!isEnabled ? 'disabled' : ''}`}
+            disabled={disabled || !isEnabled}
+            title={!supportsLIGA && supportsLIGA !== undefined ? 'Not detected for this font' : ''}
+            type="button"
+          >
+            .LIGA
+          </button>
+          <button
+            onClick={handleDligClick}
+            className={`ligature-button ${dlig ? 'active' : ''} ${!supportsDLIG && supportsDLIG !== undefined ? 'unsupported' : ''} ${!isEnabled ? 'disabled' : ''}`}
+            disabled={disabled || !isEnabled}
+            title={!supportsDLIG && supportsDLIG !== undefined ? 'Not detected for this font' : ''}
+            type="button"
+          >
+            .DLIG
+          </button>
+        </div>
       </div>
     </div>
   );

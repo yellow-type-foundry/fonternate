@@ -13,34 +13,26 @@ export const ContextualAltToggle: React.FC<ContextualAltToggleProps> = ({
   onChange,
   disabled = false,
 }) => {
-  const lineIcon = chrome.runtime.getURL('assets/1691347d42a6c2278c21073ecc433cdb4d6f8d0d.svg');
-  const circleIcon = chrome.runtime.getURL('assets/a16ce7203007e07c1a38449dd51461a86c4e5a98.svg');
+  const toggleIcon = chrome.runtime.getURL('assets/bb8b02ee61663c03686c8906db3c0ef84f6a282f.svg');
+
+  const handleToggle = () => {
+    if (!disabled) {
+      onChange(!value);
+    }
+  };
 
   return (
     <div className="opentype-feature-row">
-      <div className="opentype-feature-label">
-        Contextual<br />Alternates
-      </div>
+      <div className="opentype-feature-label">Contextual Alternates</div>
       <div className="opentype-feature-toggle">
         <button
-          onClick={() => !disabled && onChange(true)}
-          className={`opentype-toggle-btn ${value ? 'active' : ''} ${!supportsCALT && supportsCALT !== undefined ? 'unsupported' : ''}`}
+          onClick={handleToggle}
+          className={`toggle-switch ${value ? 'active' : ''}`}
           disabled={disabled}
-          title={!supportsCALT && supportsCALT !== undefined ? 'Not detected for this font' : ''}
+          type="button"
         >
-          <div className="toggle-icon-wrapper toggle-icon-line">
-            <img src={lineIcon} alt="" className="toggle-icon" />
-          </div>
-        </button>
-        <button
-          onClick={() => !disabled && onChange(false)}
-          className={`opentype-toggle-btn ${!value ? 'active' : ''} ${!supportsCALT && supportsCALT !== undefined ? 'unsupported' : ''}`}
-          disabled={disabled}
-          title={!supportsCALT && supportsCALT !== undefined ? 'Not detected for this font' : ''}
-        >
-          <div className="toggle-icon-wrapper">
-            <img src={circleIcon} alt="" className="toggle-icon" />
-          </div>
+          <div className="toggle-switch-handle"></div>
+          <img src={toggleIcon} alt="" className="toggle-switch-icon" />
         </button>
       </div>
     </div>

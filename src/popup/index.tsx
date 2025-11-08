@@ -420,15 +420,11 @@ const Panel: React.FC = () => {
           error={state.error || undefined}
         />
 
-        <div className="divider-line"></div>
-
         <TextTransformSegmented
           value={state.textTransform}
           onChange={handleTextTransformChange}
           disabled={state.loading}
         />
-
-        <div className="divider-line"></div>
 
         <StylisticSetsToggleGroup
           selected={state.stylisticSets}
@@ -436,8 +432,6 @@ const Panel: React.FC = () => {
           onChange={handleStylisticSetToggle}
           disabled={state.loading}
         />
-
-        <div className="divider-line"></div>
 
         <div className="opentype-features-container">
           <SwashLevelSegmented
@@ -465,23 +459,12 @@ const Panel: React.FC = () => {
         </div>
       </div>
 
-      <div className="divider-line"></div>
-
       <div className="button-section">
         <button
           onClick={handlePreviousFont}
           className="previous-font-button"
           disabled={(!state.lastFontName && !state.fontName) || state.loading}
         >
-          <img 
-            src={chrome.runtime.getURL('assets/646c2af72478b4a4aeefa254a9a4b524d296daf8.svg')}
-            alt="" 
-            className="button-icon"
-            onError={(e) => {
-              // Fallback if icon not found
-              e.currentTarget.style.display = 'none';
-            }}
-          />
           PREVIOUS
         </button>
         <button
@@ -489,15 +472,6 @@ const Panel: React.FC = () => {
           className="reset-button"
           disabled={state.loading}
         >
-          <img 
-            src={chrome.runtime.getURL('assets/b572e4dcbc7b3b49f361608582c47a458a5b647e.svg')}
-            alt="" 
-            className="button-icon"
-            onError={(e) => {
-              // Fallback if icon not found
-              e.currentTarget.style.display = 'none';
-            }}
-          />
           RESET
         </button>
       </div>
