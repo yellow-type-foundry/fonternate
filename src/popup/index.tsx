@@ -87,6 +87,14 @@ const Panel: React.FC = () => {
                 calt: currentState.calt,
               };
               saveAppState(stateForSave);
+              
+              // Update React state for fontName and lastFontName so Previous Font button works correctly
+              setState(prevState => ({
+                ...prevState,
+                fontName: targetFontName,
+                lastFontName: newLastFontName,
+              }));
+              
               resolve();
             })
             .catch((error) => {
@@ -419,28 +427,30 @@ const Panel: React.FC = () => {
           loading={state.loading}
           error={state.error || undefined}
         />
+        <div className="feature-gap"></div>
 
-        <TextTransformSegmented
-          value={state.textTransform}
-          onChange={handleTextTransformChange}
-          disabled={state.loading}
-        />
-
-        <StylisticSetsToggleGroup
-          selected={state.stylisticSets}
-          available={state.capabilities.ss}
-          onChange={handleStylisticSetToggle}
-          disabled={state.loading}
-        />
-
-        <div className="opentype-features-container">
-          <SwashLevelSegmented
-            value={state.swashLevel}
-            availableLevels={state.capabilities.swashLevels}
-            onChange={handleSwashLevelChange}
+        <div className="feature-row-wrapper">
+          <TextTransformSegmented
+            value={state.textTransform}
+            onChange={handleTextTransformChange}
             disabled={state.loading}
           />
+        </div>
+        <div className="feature-gap"></div>
+        <hr className="feature-divider" />
+        <div className="feature-gap"></div>
 
+        <div className="feature-row-wrapper">
+          <StylisticSetsToggleGroup
+            selected={state.stylisticSets}
+            available={state.capabilities.ss}
+            onChange={handleStylisticSetToggle}
+            disabled={state.loading}
+          />
+        </div>
+        <div className="feature-gap"></div>
+
+        <div className="feature-row-wrapper">
           <LigatureToggles
             liga={state.liga}
             dlig={state.dlig}
@@ -449,7 +459,20 @@ const Panel: React.FC = () => {
             onChange={handleLigatureChange}
             disabled={state.loading}
           />
+        </div>
+        <div className="feature-gap"></div>
 
+        <div className="feature-row-wrapper">
+          <SwashLevelSegmented
+            value={state.swashLevel}
+            availableLevels={state.capabilities.swashLevels}
+            onChange={handleSwashLevelChange}
+            disabled={state.loading}
+          />
+        </div>
+        <div className="feature-gap"></div>
+
+        <div className="feature-row-wrapper">
           <ContextualAltToggle
             value={state.calt}
             supportsCALT={state.capabilities.supportsCALT}
@@ -457,6 +480,7 @@ const Panel: React.FC = () => {
             disabled={state.loading}
           />
         </div>
+        <div className="feature-gap"></div>
       </div>
 
       <div className="button-section">
@@ -465,14 +489,14 @@ const Panel: React.FC = () => {
           className="previous-font-button"
           disabled={(!state.lastFontName && !state.fontName) || state.loading}
         >
-          PREVIOUS
+          PREVIOUS FONT
         </button>
         <button
           onClick={handleReset}
           className="reset-button"
           disabled={state.loading}
         >
-          RESET
+          RESET ALL
         </button>
       </div>
     </div>

@@ -40,8 +40,14 @@ class FontInjector {
           this.resetFonts();
           break;
         case 'APPLY_FONT':
-          this.handleApplyFont(message.payload);
-          sendResponse({ success: true });
+          try {
+            console.log('[Fonternate] Content script received APPLY_FONT:', message.payload);
+            this.handleApplyFont(message.payload);
+            sendResponse({ success: true });
+          } catch (error) {
+            console.error('[Fonternate] Error in handleApplyFont:', error);
+            sendResponse({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+          }
           return true;
         case 'DETECT_CAPABILITIES':
           this.handleDetectCapabilities(message.payload, sendResponse);
@@ -279,6 +285,14 @@ class FontInjector {
     
     this.styleElement.textContent = css;
     document.head.appendChild(this.styleElement);
+    
+    // Verify style was injected
+    const injectedStyle = document.getElementById('font-override-style');
+    if (!injectedStyle) {
+      console.error('[Fonternate] Failed to inject style element');
+    } else {
+      console.log('[Fonternate] Style element injected successfully');
+    }
   }
 
   private async handleDetectCapabilities(

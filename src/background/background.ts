@@ -132,6 +132,7 @@ chrome.runtime.onMessage.addListener((message: ChromeMessage, sender, sendRespon
         }).then(() => {
           sendResponse({ success: true });
         }).catch((error) => {
+          console.error('[Fonternate] Error applying font:', error);
           sendResponse({ success: false, error: error.message || 'Failed to apply font' });
         });
       } else {
@@ -144,6 +145,7 @@ chrome.runtime.onMessage.addListener((message: ChromeMessage, sender, sendRespon
               });
               sendResponse({ success: true });
             } catch (error) {
+              console.error('[Fonternate] Error applying font:', error);
               sendResponse({ success: false, error: error instanceof Error ? error.message : 'Failed to apply font' });
             }
           } else {
