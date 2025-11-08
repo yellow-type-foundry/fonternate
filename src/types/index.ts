@@ -9,7 +9,8 @@ export interface FontCapabilities {
 }
 
 export interface AppState {
-  fontName: string;                 // e.g., "Monarch"
+  fontName: string;                 // Base font family name (e.g., "Monarch"), without weight suffix
+  fontWeight: string;               // Weight suffix (e.g., "regular", "bold"), default "regular"
   textTransform: TextTransform;     // default "none"
   stylisticSets: Set<number>;       // 1..9; multi-select; default empty
   swashLevel: number;               // 0..9; default 0
@@ -20,7 +21,7 @@ export interface AppState {
   capabilities: FontCapabilities;   // detected per selected font
   loading: boolean;                 // while applying or probing features
   error?: string | null;            // UX toast/message
-  lastFontName?: string;            // for "Previous Font"
+  lastFontName?: string;            // for "Previous Font" (full name with weight)
 }
 
 // Legacy types for backward compatibility

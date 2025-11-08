@@ -1,4 +1,5 @@
 import { FontSettings, ChromeMessage, AppState, FontCapabilities } from '../types';
+import { parseFontName } from './fontUtils';
 
 export const defaultFontSettings: FontSettings = {
   fontFamily: '',
@@ -43,6 +44,7 @@ export const defaultCapabilities: FontCapabilities = {
 
 export const defaultAppState: AppState = {
   fontName: '',
+  fontWeight: 'regular',
   textTransform: 'none',
   stylisticSets: new Set<number>(),
   swashLevel: 0,
@@ -138,6 +140,20 @@ export const getAppState = async (): Promise<AppState> => {
         }
         if (Array.isArray(state.textStyles)) {
           state.textStyles = new Set(state.textStyles);
+        }
+        // Handle backward compatibility: if fontWeight is missing, parse fontName or default to 'regular'
+        if (!state.fontWeight) {
+          if (state.fontName) {
+            const parsed = parseFontName(state.fontName);
+            if (parsed && parsed.weightSuffix) {
+              state.fontName = parsed.baseName;
+              state.fontWeight = parsed.weightSuffix;
+            } else {
+              state.fontWeight = 'regular';
+            }
+          } else {
+            state.fontWeight = 'regular';
+          }
         }
         return state;
       }

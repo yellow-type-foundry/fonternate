@@ -2,8 +2,10 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AppState, FontCapabilities, TextTransform } from '../types';
 import { getAppState, saveAppState, sendMessage, defaultAppState } from '../utils/chrome';
+import { parseFontName, buildFontName } from '../utils/fontUtils';
 import {
   FontNameInput,
+  FontWeightSelector,
   TextTransformSegmented,
   StylisticSetsToggleGroup,
   SwashLevelSegmented,
@@ -40,17 +42,31 @@ const Panel: React.FC = () => {
         const currentState: AppState = (stateToUse && typeof stateToUse !== 'string') 
           ? stateToUse 
           : prev;
-        const targetFontName = typeof stateToUse === 'string' 
-          ? stateToUse 
-          : currentState.fontName;
+        
+        // Determine the full font name to use
+        let targetFontName: string;
+        if (typeof stateToUse === 'string') {
+          // If a string is provided, parse it to extract base name and weight
+          const parsed = parseFontName(stateToUse);
+          if (parsed) {
+            targetFontName = buildFontName(parsed.baseName, parsed.weightSuffix || 'regular');
+          } else {
+            targetFontName = stateToUse;
+          }
+        } else {
+          // Combine base name + weight from state
+          targetFontName = buildFontName(currentState.fontName, currentState.fontWeight);
+        }
 
-        if (!targetFontName?.trim()) {
+        if (!currentState.fontName?.trim()) {
           resolve();
           return prev;
         }
 
         console.log('[Fonternate] applyFont called with:', {
           fontName: targetFontName,
+          baseName: currentState.fontName,
+          fontWeight: currentState.fontWeight,
           stylisticSets: Array.from(currentState.stylisticSets),
           skipStateUpdate
         });
@@ -73,13 +89,13 @@ const Panel: React.FC = () => {
             .then(() => {
               // Save state without updating React state
               // When switching fonts, save the previous font as lastFontName
-              const newLastFontName = (prev.fontName && prev.fontName !== targetFontName) 
-                ? prev.fontName 
+              const prevFullFontName = buildFontName(prev.fontName, prev.fontWeight);
+              const newLastFontName = (prev.fontName && prevFullFontName !== targetFontName) 
+                ? prevFullFontName 
                 : prev.lastFontName;
               
               const stateForSave: AppState = {
                 ...prev,
-                fontName: targetFontName,
                 lastFontName: newLastFontName,
                 textTransform: currentState.textTransform,
                 stylisticSets: currentState.stylisticSets,
@@ -91,10 +107,9 @@ const Panel: React.FC = () => {
               };
               saveAppState(stateForSave);
               
-              // Update React state for fontName and lastFontName so Previous Font button works correctly
+              // Update React state for lastFontName so Previous Font button works correctly
               setState(prevState => ({
                 ...prevState,
-                fontName: targetFontName,
                 lastFontName: newLastFontName,
               }));
               
@@ -126,13 +141,13 @@ const Panel: React.FC = () => {
           .then(() => {
             setState(prevState => {
               // When switching fonts, save the previous font as lastFontName
-              const newLastFontName = (prevState.fontName && prevState.fontName !== targetFontName) 
-                ? prevState.fontName 
+              const prevFullFontName = buildFontName(prevState.fontName, prevState.fontWeight);
+              const newLastFontName = (prevState.fontName && prevFullFontName !== targetFontName) 
+                ? prevFullFontName 
                 : prevState.lastFontName;
               
               const newState: AppState = {
                 ...prevState,
-                fontName: targetFontName,
                 lastFontName: newLastFontName,
                 loading: false,
                 error: null,
@@ -158,7 +173,13 @@ const Panel: React.FC = () => {
   }, []);
 
   const detectCapabilities = useCallback(async (fontName: string) => {
-    if (!fontName.trim()) {
+    // Parse font name to extract base name and weight
+    const parsed = parseFontName(fontName);
+    const baseName = parsed?.baseName || fontName;
+    const weightSuffix = parsed?.weightSuffix || 'regular';
+    const fullFontName = buildFontName(baseName, weightSuffix);
+
+    if (!baseName.trim()) {
       setState(prev => ({
         ...prev,
         capabilities: defaultAppState.capabilities,
@@ -170,24 +191,23 @@ const Panel: React.FC = () => {
 
     setState(prev => {
       // Don't detect if it's the same font that's already loaded and capabilities are known
-      if (prev.fontName === fontName && !prev.loading && prev.capabilities.ss.length > 0) {
+      if (prev.fontName === baseName && !prev.loading && prev.capabilities.ss.length > 0) {
         return prev;
       }
-      // Don't update fontName here - it's already updated by handleFontNameChange
       return { ...prev, loading: true, error: null };
     });
 
     try {
       const response = await sendMessage({
         type: 'DETECT_CAPABILITIES',
-        payload: { fontName },
+        payload: { fontName: fullFontName },
       });
 
       const capabilities: FontCapabilities = response?.capabilities || defaultAppState.capabilities;
       
       setState(prev => {
         // Only update capabilities if this is still the current font name (user might have changed it)
-        if (prev.fontName === fontName) {
+        if (prev.fontName === baseName) {
           return {
             ...prev,
             capabilities,
@@ -212,7 +232,22 @@ const Panel: React.FC = () => {
   }, [applyFont]);
 
   const handleFontNameChange = (fontName: string) => {
-    setState(prev => ({ ...prev, fontName }));
+    // Parse font name to extract base name and weight suffix
+    const parsed = parseFontName(fontName);
+    if (parsed) {
+      setState(prev => ({
+        ...prev,
+        fontName: parsed.baseName,
+        fontWeight: parsed.weightSuffix || 'regular',
+      }));
+    } else {
+      // If parsing fails, use the input as-is and default to regular weight
+      setState(prev => ({
+        ...prev,
+        fontName: fontName.trim(),
+        fontWeight: 'regular',
+      }));
+    }
   };
 
   const handleTextTransformChange = async (textTransform: TextTransform) => {
@@ -322,19 +357,25 @@ const Panel: React.FC = () => {
 
   const handlePreviousFont = async () => {
     // Toggle between current font and previous font
+    const currentFullFontName = buildFontName(state.fontName, state.fontWeight);
     if (!state.lastFontName && !state.fontName) return;
 
     try {
       // If we have a current font and a previous font, swap them
       if (state.fontName && state.lastFontName) {
-        // Swap: current becomes previous, previous becomes current
-        const newFontName = state.lastFontName;
-        const newLastFontName = state.fontName;
+        // Parse the previous font name to extract base name and weight
+        const parsed = parseFontName(state.lastFontName);
+        const newBaseName = parsed?.baseName || state.lastFontName;
+        const newWeight = parsed?.weightSuffix || 'regular';
+        const newFullFontName = buildFontName(newBaseName, newWeight);
+        
+        // Current font becomes previous
+        const newLastFontName = currentFullFontName;
 
         await sendMessage({
           type: 'APPLY_FONT',
           payload: {
-            fontName: newFontName,
+            fontName: newFullFontName,
             textTransform: state.textTransform,
             stylisticSets: Array.from(state.stylisticSets),
             swashLevel: state.swashLevel,
@@ -347,7 +388,8 @@ const Panel: React.FC = () => {
 
         const newState: AppState = {
           ...state,
-          fontName: newFontName,
+          fontName: newBaseName,
+          fontWeight: newWeight,
           lastFontName: newLastFontName,
           loading: false,
           error: null,
@@ -355,13 +397,18 @@ const Panel: React.FC = () => {
 
         setState(newState);
         await saveAppState(newState);
-        await detectCapabilities(newFontName);
+        await detectCapabilities(newFullFontName);
       } else if (state.lastFontName && !state.fontName) {
         // No current font, apply the previous one
+        const parsed = parseFontName(state.lastFontName);
+        const newBaseName = parsed?.baseName || state.lastFontName;
+        const newWeight = parsed?.weightSuffix || 'regular';
+        const newFullFontName = buildFontName(newBaseName, newWeight);
+        
         await sendMessage({
           type: 'APPLY_FONT',
           payload: {
-            fontName: state.lastFontName,
+            fontName: newFullFontName,
             textTransform: state.textTransform,
             stylisticSets: Array.from(state.stylisticSets),
             swashLevel: state.swashLevel,
@@ -374,7 +421,8 @@ const Panel: React.FC = () => {
 
         const newState: AppState = {
           ...state,
-          fontName: state.lastFontName,
+          fontName: newBaseName,
+          fontWeight: newWeight,
           lastFontName: '', // Clear last since we're using it now
           loading: false,
           error: null,
@@ -382,7 +430,7 @@ const Panel: React.FC = () => {
 
         setState(newState);
         await saveAppState(newState);
-        await detectCapabilities(state.lastFontName);
+        await detectCapabilities(newFullFontName);
       } else if (state.fontName && !state.lastFontName) {
         // We have a current font but no previous - remove current font
         await sendMessage({ type: 'RESET_ALL' });
@@ -390,7 +438,8 @@ const Panel: React.FC = () => {
         const newState: AppState = {
           ...state,
           fontName: '',
-          lastFontName: state.fontName, // Save current as previous
+          fontWeight: 'regular',
+          lastFontName: currentFullFontName, // Save current as previous
           loading: false,
           error: null,
         };
@@ -411,10 +460,12 @@ const Panel: React.FC = () => {
       await sendMessage({ type: 'RESET_ALL' });
 
       // Clear font name and reset all settings to defaults
+      const currentFullFontName = buildFontName(state.fontName, state.fontWeight);
       const resetState: AppState = {
         ...state,
         fontName: '',
-        lastFontName: state.fontName || state.lastFontName, // Save current font as last if it exists
+        fontWeight: 'regular',
+        lastFontName: state.fontName ? currentFullFontName : state.lastFontName, // Save current font as last if it exists
         textTransform: 'none',
         stylisticSets: new Set<number>(),
         swashLevel: 0,
@@ -445,8 +496,13 @@ const Panel: React.FC = () => {
           onChange={handleFontNameChange}
           onDetectCapabilities={detectCapabilities}
           onApplyFont={(fontName) => {
-            // Use the font name from the input if provided, otherwise use state
-            const fontNameToApply = fontName || state.fontName;
+            // Use the font name from the input if provided, otherwise combine base name + weight
+            let fontNameToApply: string;
+            if (fontName) {
+              fontNameToApply = fontName;
+            } else {
+              fontNameToApply = buildFontName(state.fontName, state.fontWeight);
+            }
             if (fontNameToApply?.trim()) {
               // Skip all state updates to prevent input refresh when applying via Enter
               applyFont(fontNameToApply, true);
@@ -455,6 +511,27 @@ const Panel: React.FC = () => {
           loading={state.loading}
           error={state.error || undefined}
         />
+        <div className="feature-gap"></div>
+        <div className="feature-row-wrapper">
+          <FontWeightSelector
+            fontName={state.fontName}
+            fontWeight={state.fontWeight}
+            onChange={async (newFontName) => {
+              // Parse the new font name to extract weight
+              const parsed = parseFontName(newFontName);
+              if (parsed) {
+                setState(prev => ({
+                  ...prev,
+                  fontWeight: parsed.weightSuffix || 'regular',
+                }));
+                // Detect capabilities with the full font name, then apply
+                await detectCapabilities(newFontName);
+                await applyFont(newFontName, true);
+              }
+            }}
+            disabled={state.loading}
+          />
+        </div>
         <div className="feature-gap"></div>
 
         <div className="feature-row-wrapper">
@@ -541,10 +618,10 @@ const Panel: React.FC = () => {
         </button>
         <button
           onClick={() => {
-            const fontNameToApply = state.fontName?.trim();
-            if (!state.loading && fontNameToApply) {
-              detectCapabilities(fontNameToApply).then(() => {
-                applyFont(fontNameToApply, true);
+            const fullFontName = buildFontName(state.fontName, state.fontWeight);
+            if (!state.loading && state.fontName?.trim()) {
+              detectCapabilities(fullFontName).then(() => {
+                applyFont(fullFontName, true);
               });
             }
           }}
@@ -553,6 +630,12 @@ const Panel: React.FC = () => {
         >
           APPLY
         </button>
+      </div>
+      <div className="footer-note">
+        Fonternate © 2025 LAMBAO. Find me at{' '}
+        <a href="https://instagram.com/lamg.bao" target="_blank" rel="noopener noreferrer">
+          @lamg.bao
+        </a>
       </div>
     </div>
   );

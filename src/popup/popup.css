@@ -27,6 +27,28 @@
   height: fit-content;
 }
 
+/* Font Weight Selector */
+.font-weight-control {
+  width: 100% !important;
+  max-width: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.font-weight-control::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.font-weight-control .segmented-control-btn {
+  font-size: 11px;
+  padding: 8.6px 6px;
+  white-space: nowrap;
+  min-width: fit-content;
+  flex-shrink: 0;
+}
+
 .font-input {
   background: transparent;
   border: none;
@@ -222,7 +244,7 @@
 
 /* Gap spacer */
 .feature-gap {
-  height: 24px;
+  height: 20px;
   width: 100%;
 }
 
@@ -457,10 +479,10 @@
   position: absolute;
   top: calc(100% + 5.75px);
   right: 0;
-  background: white;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
   border: 0.75px solid #E9E4E2;
   border-radius: 6px;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   min-width: 136px;
   max-height: 200px;
@@ -471,12 +493,12 @@
 .stylistic-sets-dropdown-item {
   display: block;
   width: 100%;
-  padding: 11.5px 17.25px;
+  padding: 5.75px 17.25px;
   font-family: 'Roboto Mono', monospace;
   font-size: 14.375px;
   font-weight: 400;
   color: #4a1002;
-  background: white;
+  background: transparent;
   border: none;
   text-align: left;
   cursor: pointer;
@@ -488,8 +510,8 @@
 }
 
 .stylistic-sets-dropdown-item.active {
-  background: #4a1002;
-  color: white;
+  background: #F2EBE9;
+  color: #4a1002;
   font-weight: 500;
 }
 
@@ -895,6 +917,26 @@
   align-items: center;
   min-width: 0;
   overflow: hidden;
+}
+
+/* Footnote */
+.footer-note {
+  padding: 0 20px 20px 20px;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: #9E7E76;
+  line-height: 1.4;
+}
+
+.footer-note a {
+  color: #9E7E76;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-note a:hover {
+  color: #6E493F;
 }
 
 /* Hide default checkbox styling */

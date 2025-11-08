@@ -25,7 +25,7 @@ export const StylisticSetsToggleGroup: React.FC<StylisticSetsToggleGroupProps> =
     const sorted = Array.from(selected).sort();
     if (sorted.length === 1) {
       return `SS0${sorted[0]}`;
-    } else if (sorted.length <= 3) {
+    } else if (sorted.length <= 2) {
       return sorted.map(num => `SS0${num}`).join(', ');
     } else {
       return `SS0${sorted[0]} +${sorted.length - 1}`;

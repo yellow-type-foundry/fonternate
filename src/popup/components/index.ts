@@ -1,4 +1,5 @@
 export { FontNameInput } from './FontNameInput';
+export { FontWeightSelector } from './FontWeightSelector';
 export { TextTransformSegmented } from './TextTransformSegmented';
 export { StylisticSetsToggleGroup } from './StylisticSetsToggleGroup';
 export { SwashLevelSegmented } from './SwashLevelSegmented';

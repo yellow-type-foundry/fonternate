@@ -23,7 +23,7 @@ export const TextStylesToggleGroup: React.FC<TextStylesToggleGroupProps> = ({
     const sorted = Array.from(selected).sort();
     if (sorted.length === 1) {
       return sorted[0].toUpperCase();
-    } else if (sorted.length <= 3) {
+    } else if (sorted.length <= 2) {
       return sorted.map(s => s.toUpperCase()).join(', ');
     } else {
       return `${sorted[0].toUpperCase()} +${sorted.length - 1}`;
