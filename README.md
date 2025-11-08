@@ -1,29 +1,39 @@
 # Fonternate
 
-A Chrome Extension that lets you test custom fonts on live websites with advanced typography controls, similar to the old FontSwap extension but with more granular control.
+A Chrome Extension that lets you override fonts on any webpage with locally installed fonts. Test typography with advanced OpenType features, weight selection, and stylistic sets.
 
 ## Features
 
 ### 🎨 Font Selection
-- **Google Fonts Integration**: Choose from popular Google Fonts with a dropdown selector
-- **Custom Fonts**: Enter any font name manually (e.g., Arial, Helvetica, custom web fonts)
-- **Font Preview**: See how your selected font looks with sample text
+- **Custom Font Input**: Enter any font family name (e.g., Helvetica, Arial, custom web fonts)
+- **Weight Selector**: Always-visible selector with 9 font weights (100-900)
+  - Default weight: 400 (regular)
+  - Separate family name and weight for better control
+- **Previous Font**: Quickly switch between current and previous font
 
-### 📏 Typography Controls
-- **Font Size**: Adjust font size from 8px to 32px with a slider
-- **Letter Spacing (Tracking)**: Control character spacing from -2px to 4px
-- **Line Height (Leading)**: Adjust line spacing from 1.0 to 3.0
-- **Text Transform**: Apply uppercase, lowercase, capitalize, or none
+### 📝 Text Controls
+- **Text Transform**: Apply uppercase, lowercase, or none transformations
+- **Text Styles**: Toggle various text style features
 
 ### 🔤 OpenType Features
-- **Ligatures**: Enable/disable standard ligatures (fi, fl, ff, etc.)
+- **Ligatures**: 
+  - Standard ligatures (liga) - fi, fl, ff, etc.
+  - Discretionary ligatures (dlig) - decorative ligatures
 - **Stylistic Sets**: Toggle ss01-ss20 for advanced typography features
-- **Real-time Preview**: See OpenType features in action
+- **Swashes**: Control swash levels (0-9) for decorative characters
+- **Contextual Alternates (calt)**: Enable contextual character substitutions
+- **Smart Detection**: Automatically detects available OpenType features for your selected font
 
 ### ⚡ Quick Controls
-- **Keyboard Shortcut**: Toggle extension on/off with `Ctrl+Shift+F` (or `Cmd+Shift+F` on Mac)
-- **Global Application**: Apply fonts to all text elements on any website
+- **Keyboard Shortcut**: Toggle extension with `Ctrl+Shift+F` (or `Cmd+Shift+F` on Mac)
+- **Apply Button**: Manually apply font changes
+- **Reset Button**: Clear all font overrides and reset to defaults
 - **Persistent Settings**: Your preferences are saved and restored across sessions
+
+### 🔒 Privacy
+- **No Data Collection**: Fonternate does NOT collect, track, or transmit any personal data
+- **Local Storage Only**: All preferences stored locally on your device
+- **No Analytics**: No tracking or analytics services used
 
 ## Project Structure
 
@@ -49,9 +59,14 @@ fonternate/
 │       ├── index.tsx          # Main React popup component
 │       ├── popup.css          # Popup styles with Tailwind
 │       └── components/
-│           ├── FontSelector.tsx       # Font selection component
-│           ├── FontControls.tsx       # Typography controls
-│           └── OpenTypeFeatures.tsx   # OpenType feature toggles
+│           ├── FontNameInput.tsx           # Font name input component
+│           ├── FontWeightSelector.tsx      # Weight selector component
+│           ├── TextTransformSegmented.tsx   # Text transform controls
+│           ├── StylisticSetsToggleGroup.tsx # Stylistic sets toggles
+│           ├── LigatureToggles.tsx          # Ligature controls
+│           ├── SwashLevelSegmented.tsx      # Swash level selector
+│           ├── ContextualAltToggle.tsx      # Contextual alternates toggle
+│           └── TextStylesToggleGroup.tsx    # Text styles controls
 ├── dist/                      # Built extension files (generated)
 └── icons/                     # Extension icons (to be added)
 ```
@@ -98,16 +113,24 @@ This will watch for changes and rebuild automatically.
 
 ### Basic Usage
 1. Click the extension icon in your Chrome toolbar
-2. Select a font from the dropdown or enter a custom font name
-3. Adjust typography settings using the sliders and controls
-4. Toggle the extension on/off using the button in the popup header
+2. Enter a font family name (e.g., "Helvetica", "Arial", "Inter")
+3. Select a font weight from the always-visible weight selector (default: 400/regular)
+4. Click "APPLY" to apply the font to the current page
+5. Use "PREVIOUS" to quickly switch between fonts
+6. Use "RESET" to clear all font overrides
 
 ### Keyboard Shortcuts
 - **Toggle Extension**: `Ctrl+Shift+F` (Windows/Linux) or `Cmd+Shift+F` (Mac)
 
 ### Advanced Features
-- **OpenType Features**: Enable ligatures and stylistic sets for fonts that support them
-- **Custom Fonts**: Enter any font family name, including web fonts loaded on the page
+- **Weight Selection**: Choose from 9 font weights (100-900) - just enter the family name and select weight
+- **OpenType Features**: 
+  - Enable ligatures (standard and discretionary)
+  - Toggle stylistic sets (ss01-ss20) for fonts that support them
+  - Control swash levels for decorative characters
+  - Enable contextual alternates
+- **Text Transform**: Apply uppercase, lowercase, or none transformations
+- **Smart Detection**: Extension automatically detects available OpenType features for your selected font
 - **Persistent Settings**: Your font preferences are saved and will be applied to new pages
 
 ## Technical Details
@@ -134,20 +157,21 @@ This will watch for changes and rebuild automatically.
 
 ## Customization
 
-### Adding New Fonts
-The extension includes a curated list of popular Google Fonts. To add more:
-1. Edit `src/utils/chrome.ts`
-2. Add fonts to the fallback array in `loadGoogleFonts()`
+### Font Weight Suffixes
+The extension supports standard font weight suffixes. To modify available weights:
+1. Edit `src/utils/fontUtils.ts`
+2. Update the `FONT_WEIGHTS` object or `getAvailableWeightSuffixes()` function
 3. Rebuild the extension
 
 ### Custom OpenType Features
 To add support for additional OpenType features:
-1. Update the `FontSettings` interface in `src/types/index.ts`
-2. Add the feature to the default settings
+1. Update the `AppState` interface in `src/types/index.ts`
+2. Add the feature to the default settings in `src/utils/chrome.ts`
 3. Update the UI components to include the new feature
+4. Update the content script to apply the feature
 
 ### Styling
-The popup uses Tailwind CSS. Customize the design by:
+The popup uses Tailwind CSS with custom CSS. Customize the design by:
 1. Modifying `tailwind.config.js`
 2. Adding custom classes in `src/popup/popup.css`
 3. Updating component styles

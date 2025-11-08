@@ -224,7 +224,7 @@ chrome.runtime.onMessage.addListener((message: ChromeMessage, sender, sendRespon
 
 // Handle extension installation
 chrome.runtime.onInstalled.addListener(async () => {
-  console.log('Font Override Extension installed');
+  // Extension installed
   
   // Initialize default settings if not already set
   try {

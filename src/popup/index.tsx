@@ -63,13 +63,7 @@ const Panel: React.FC = () => {
           return prev;
         }
 
-        console.log('[Fonternate] applyFont called with:', {
-          fontName: targetFontName,
-          baseName: currentState.fontName,
-          fontWeight: currentState.fontWeight,
-          stylisticSets: Array.from(currentState.stylisticSets),
-          skipStateUpdate
-        });
+        // Debug logging removed for production
 
         // If skipStateUpdate is true, don't change any state - just apply the font
         if (skipStateUpdate) {
@@ -262,7 +256,6 @@ const Panel: React.FC = () => {
   };
 
   const handleStylisticSetToggle = async (num: number) => {
-    console.log('[Fonternate] Toggling stylistic set:', num);
     setState(prev => {
       const newSets = new Set(prev.stylisticSets);
       const wasSelected = newSets.has(num);
@@ -272,22 +265,14 @@ const Panel: React.FC = () => {
         newSets.add(num);
       }
       
-      console.log('[Fonternate] New stylistic sets:', Array.from(newSets));
-      
       const newState = { ...prev, stylisticSets: newSets };
       saveAppState(newState);
       
       // Always apply font if fontName exists, even if it hasn't changed
       // This ensures stylistic sets are applied immediately
       if (newState.fontName?.trim()) {
-        console.log('[Fonternate] Applying font with stylistic sets:', {
-          fontName: newState.fontName,
-          stylisticSets: Array.from(newSets)
-        });
         // Apply font with the new state immediately
         applyFont(newState);
-      } else {
-        console.log('[Fonternate] No font name, skipping font application');
       }
       
       return newState;

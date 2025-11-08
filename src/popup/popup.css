@@ -42,7 +42,7 @@
 }
 
 .font-weight-control .segmented-control-btn {
-  font-size: 11px;
+  font-size: 12px;
   padding: 8.6px 6px;
   white-space: nowrap;
   min-width: fit-content;
@@ -63,6 +63,7 @@
   opacity: 0.45;
   letter-spacing: normal;
   transition: opacity 0.2s ease;
+  text-align: center;
 }
 
 .font-input:hover {
