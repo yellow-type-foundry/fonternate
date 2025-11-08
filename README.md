@@ -25,7 +25,6 @@ A Chrome Extension that lets you override fonts on any webpage with locally inst
 - **Smart Detection**: Automatically detects available OpenType features for your selected font
 
 ### ⚡ Quick Controls
-- **Keyboard Shortcut**: Toggle extension with `Ctrl+Shift+F` (or `Cmd+Shift+F` on Mac)
 - **Apply Button**: Manually apply font changes
 - **Reset Button**: Clear all font overrides and reset to defaults
 - **Persistent Settings**: Your preferences are saved and restored across sessions
