@@ -465,8 +465,6 @@ const Panel: React.FC = () => {
           />
         </div>
         <div className="feature-gap"></div>
-        <hr className="feature-divider" />
-        <div className="feature-gap"></div>
 
         <div className="feature-row-wrapper">
           <StylisticSetsToggleGroup
@@ -517,6 +515,8 @@ const Panel: React.FC = () => {
             disabled={state.loading}
           />
         </div>
+        <div className="feature-gap"></div>
+        <hr className="feature-divider" />
         <div className="feature-gap"></div>
       </div>
 

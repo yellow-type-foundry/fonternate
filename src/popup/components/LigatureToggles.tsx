@@ -1,4 +1,5 @@
 import React from 'react';
+import { SegmentedControl, SegmentedControlOption } from './SegmentedControl';
 
 interface LigatureTogglesProps {
   liga: boolean;
@@ -33,15 +34,44 @@ export const LigatureToggles: React.FC<LigatureTogglesProps> = ({
 
   const handleLigaClick = () => {
     if (!disabled && isEnabled) {
-      // Toggle .liga, keep .dlig as is
+      // Toggle .liga, keep .dlig as is (allow multiple selections)
       onChange(!liga, dlig);
     }
   };
 
   const handleDligClick = () => {
     if (!disabled && isEnabled) {
-      // Toggle .dlig, keep .liga as is
+      // Toggle .dlig, keep .liga as is (allow multiple selections)
       onChange(liga, !dlig);
+    }
+  };
+
+  // Determine which ligatures are "active" for the segmented control
+  // Both can be active at the same time
+  const activeLigatures: ('liga' | 'dlig')[] = [];
+  if (liga) activeLigatures.push('liga');
+  if (dlig) activeLigatures.push('dlig');
+
+  const ligatureOptions: SegmentedControlOption<'liga' | 'dlig'>[] = [
+    {
+      value: 'liga',
+      label: '.LIGA',
+      disabled: !isEnabled || (!supportsLIGA && supportsLIGA !== undefined),
+      title: !supportsLIGA && supportsLIGA !== undefined ? 'Not detected for this font' : '',
+    },
+    {
+      value: 'dlig',
+      label: '.DLIG',
+      disabled: !isEnabled || (!supportsDLIG && supportsDLIG !== undefined),
+      title: !supportsDLIG && supportsDLIG !== undefined ? 'Not detected for this font' : '',
+    },
+  ];
+
+  const handleSegmentedChange = (value: 'liga' | 'dlig') => {
+    if (value === 'liga') {
+      handleLigaClick();
+    } else {
+      handleDligClick();
     }
   };
 
@@ -50,26 +80,13 @@ export const LigatureToggles: React.FC<LigatureTogglesProps> = ({
       <div className="opentype-feature-label">Ligatures</div>
       <div className="opentype-feature-toggle">
         {isEnabled && (
-          <div className="ligature-buttons-container">
-            <button
-              onClick={handleLigaClick}
-              className={`ligature-button ${liga ? 'active' : ''} ${!supportsLIGA && supportsLIGA !== undefined ? 'unsupported' : ''}`}
-              disabled={disabled}
-              title={!supportsLIGA && supportsLIGA !== undefined ? 'Not detected for this font' : ''}
-              type="button"
-            >
-              .LIGA
-            </button>
-            <button
-              onClick={handleDligClick}
-              className={`ligature-button ${dlig ? 'active' : ''} ${!supportsDLIG && supportsDLIG !== undefined ? 'unsupported' : ''}`}
-              disabled={disabled}
-              title={!supportsDLIG && supportsDLIG !== undefined ? 'Not detected for this font' : ''}
-              type="button"
-            >
-              .DLIG
-            </button>
-          </div>
+          <SegmentedControl
+            options={ligatureOptions}
+            value={activeLigatures}
+            onChange={handleSegmentedChange}
+            disabled={disabled}
+            multiple={true}
+          />
         )}
         <button
           onClick={handleToggleSwitch}

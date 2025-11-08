@@ -1,5 +1,6 @@
 import React from 'react';
 import { TextTransform } from '../../types';
+import { SegmentedControl, SegmentedControlOption } from './SegmentedControl';
 
 interface TextTransformSegmentedProps {
   value: TextTransform;
@@ -12,7 +13,7 @@ export const TextTransformSegmented: React.FC<TextTransformSegmentedProps> = ({
   onChange,
   disabled = false,
 }) => {
-  const options: { value: TextTransform; label: string }[] = [
+  const options: SegmentedControlOption<TextTransform>[] = [
     { value: 'none', label: 'Aa' },
     { value: 'uppercase', label: 'AA' },
     { value: 'lowercase', label: 'aa' },
@@ -21,18 +22,12 @@ export const TextTransformSegmented: React.FC<TextTransformSegmentedProps> = ({
   return (
     <div className="text-transform-section">
       <div className="text-transform-label">Text transform</div>
-      <div className="text-transform-buttons">
-        {options.map((option) => (
-          <button
-            key={option.value}
-            onClick={() => !disabled && onChange(option.value)}
-            className={`text-transform-btn ${value === option.value ? 'active' : ''}`}
-            disabled={disabled}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        options={options}
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+      />
     </div>
   );
 };

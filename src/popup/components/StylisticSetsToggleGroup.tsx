@@ -90,7 +90,7 @@ export const StylisticSetsToggleGroup: React.FC<StylisticSetsToggleGroupProps> =
           <div className="stylistic-sets-dropdown-wrapper" ref={dropdownRef}>
             <button
               onClick={handleDropdownClick}
-              className="stylistic-sets-dropdown"
+              className={`stylistic-sets-dropdown ${showDropdown ? 'open' : ''}`}
               disabled={disabled}
               type="button"
             >
