@@ -21,12 +21,12 @@ export const TextTransformSegmented: React.FC<TextTransformSegmentedProps> = ({
 
   return (
     <div className="text-transform-section">
-      <div className="text-transform-label">Text transform</div>
       <SegmentedControl
         options={options}
         value={value}
         onChange={onChange}
         disabled={disabled}
+        className="text-transform-control"
       />
     </div>
   );

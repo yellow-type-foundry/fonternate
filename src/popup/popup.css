@@ -21,9 +21,10 @@
   gap: 0;
   background: #f9f6f5;
   border-radius: 8px;
-  padding: 5.75px 5.75px 5.75px 23px;
+  padding: 10px 14px;
   box-sizing: border-box;
   margin-bottom: 0;
+  height: fit-content;
 }
 
 .font-input {
@@ -31,7 +32,7 @@
   border: none;
   padding: 0;
   font-family: 'Inter Tight', 'Inter', sans-serif;
-  font-size: 23px;
+  font-size: 22px;
   font-weight: 400;
   color: #4a1002;
   flex: 1;
@@ -136,8 +137,8 @@
 
 /* Previous Font button */
 .previous-font-button {
-  background: #f2ebe9;
-  color: rgba(74, 16, 2, 0.5);
+  background: #F2EBE9;
+  color: #6E493F;
   border: none;
   padding: 11.5px 23px;
   font-family: 'Roboto Mono', monospace;
@@ -154,47 +155,55 @@
   gap: 0;
   justify-content: center;
   border-radius: 8px;
-  transition: opacity 0.2s ease;
+  transition: background 0.2s ease;
 }
 
-.previous-font-button:hover:not(:disabled) {
-  opacity: 0.8;
+.previous-font-button:hover:not(:disabled),
+.previous-font-button:active:not(:disabled) {
+  background: #E2D4CF;
+  color: #6E493F;
 }
 
 .previous-font-button:disabled {
-  opacity: 0.5;
+  opacity: 1;
+  color: #9E7E76;
   cursor: not-allowed;
 }
 
 /* Reset button */
 .reset-button {
-  background: #f2ebe9;
-  color: rgba(74, 16, 2, 0.5);
+  background: #F2EBE9;
+  color: #6E493F;
   border: none;
-  padding: 11.5px 23px;
-  font-family: 'Roboto Mono', monospace;
-  font-size: 14.375px;
-  font-weight: 500;
-  text-transform: uppercase;
+  padding: 0;
   cursor: pointer;
   white-space: nowrap;
-  flex: 1;
-  min-width: 0;
+  flex: 0 0 41px;
+  width: 41px;
   height: 41px;
   display: flex;
   align-items: center;
-  gap: 0;
   justify-content: center;
   border-radius: 8px;
-  transition: opacity 0.2s ease;
+  transition: background 0.2s ease;
+  box-sizing: border-box;
 }
 
-.reset-button:hover:not(:disabled) {
-  opacity: 0.8;
+.reset-button-icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.reset-button:hover:not(:disabled),
+.reset-button:active:not(:disabled) {
+  background: #E2D4CF;
+  color: #6E493F;
 }
 
 .reset-button:disabled {
-  opacity: 0.5;
+  opacity: 1;
+  color: #9E7E76;
   cursor: not-allowed;
 }
 
@@ -220,7 +229,7 @@
 /* Divider */
 .feature-divider {
   width: 100%;
-  height: 0.5px;
+  height: 0.75px;
   background: #E9E4E2;
   margin: 0;
   border: none;
@@ -229,21 +238,11 @@
 
 /* Text Transform Section */
 .text-transform-section {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
   width: 100%;
 }
 
 .text-transform-label {
-  font-family: 'Inter', sans-serif;
-  font-size: 14.375px;
-  font-weight: 500;
-  text-transform: uppercase;
-  color: #4a1002;
-  white-space: nowrap;
-  flex-shrink: 0;
+  display: none;
 }
 
 /* Generic Segmented Control */
@@ -256,8 +255,12 @@
   border-radius: 6px;
   padding: 0;
   box-sizing: border-box;
-  border: 0.5px solid #E9E4E2;
+  border: 0.75px solid #E9E4E2;
   overflow: hidden;
+}
+
+.text-transform-control {
+  width: 100% !important;
 }
 
 .segmented-control-btn {
@@ -279,15 +282,15 @@
   transition: all 0.2s ease;
   position: relative;
   min-width: 0;
-  border-right: 0.5px solid #E9E4E2;
+  border-right: 0.75px solid #E9E4E2;
 }
 
 .segmented-control-btn.first {
-  border-radius: 0;
+  border-radius: 6px 0 0 6px;
 }
 
 .segmented-control-btn.last {
-  border-radius: 0;
+  border-radius: 0 6px 6px 0;
   border-right: none;
 }
 
@@ -299,7 +302,10 @@
   background: linear-gradient(to bottom, #fa4838, #f88854 45.673%, #f8bfee);
   color: white;
   font-weight: 500;
-  border-right: 0.5px solid transparent;
+  border-right: 0.75px solid transparent;
+  box-shadow: 
+    inset 0px -2px 1.5px 0px rgba(253, 155, 243, 0.6),
+    inset 0px 2px 1.5px 0px rgba(255, 255, 255, 0.4);
 }
 
 .segmented-control-btn.active.last {
@@ -321,7 +327,7 @@
   border-radius: 6px;
   padding: 0;
   box-sizing: border-box;
-  border: 0.5px solid #E9E4E2;
+  border: 0.75px solid #E9E4E2;
   overflow: hidden;
 }
 
@@ -344,7 +350,7 @@
   transition: all 0.2s ease;
   position: relative;
   min-width: 0;
-  border-right: 0.5px solid #E9E4E2;
+  border-right: 0.75px solid #E9E4E2;
 }
 
 .text-transform-btn.first {
@@ -364,7 +370,7 @@
   background: linear-gradient(to bottom, #fa4838, #f88854 45.673%, #f8bfee);
   color: white;
   font-weight: 500;
-  border-right: 0.5px solid transparent;
+  border-right: 0.75px solid transparent;
 }
 
 .text-transform-btn.active.last {
@@ -452,7 +458,7 @@
   top: calc(100% + 5.75px);
   right: 0;
   background: white;
-  border: 0.5px solid #E9E4E2;
+  border: 0.75px solid #E9E4E2;
   border-radius: 6px;
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
   z-index: 1000;
@@ -496,7 +502,7 @@
 
 .stylistic-tab {
   background: #f5f5f5;
-  border: 0.5px solid #f5f5f5;
+  border: 0.75px solid #f5f5f5;
   padding: 14.375px;
   font-family: 'Roboto Mono', monospace;
   font-size: 14.375px;
@@ -620,7 +626,7 @@
   background: linear-gradient(to bottom, #fde9e7, #ffffff);
   border: none;
   box-shadow: 
-    inset 0 0 0 0.5px #FFB5A3,
+    inset 0 0 0 0.75px #FFB5A3,
     0px -1px 3px 0px rgba(255, 255, 255, 0.7),
     0px -1px 2px 0px rgba(247, 168, 207, 1),
     0px 1px 2px 0px rgba(248, 116, 75, 0.5),
@@ -631,7 +637,7 @@
   transform: translate(4px, -50%);
   background: white;
   border: none;
-  box-shadow: inset 0px -1px 1px 0px rgba(0, 0, 0, 0.1), inset 0px 1px 1px 0px rgba(255, 255, 255, 0.8), inset 0 0 0 0.5px #FFB5A3;
+  box-shadow: none;
 }
 
 .toggle-switch-icon {
@@ -805,7 +811,7 @@
 
 .swash-level-btn {
   background: #f5f5f5;
-  border: 0.5px solid #f5f5f5;
+  border: 0.75px solid #f5f5f5;
   padding: 14.375px 11.5px;
   font-family: 'Roboto Mono', monospace;
   font-size: 14.375px;
@@ -848,7 +854,7 @@
 /* Divider */
 .feature-divider {
   width: 100%;
-  height: 0.5px;
+  height: 0.75px;
   background: #E9E4E2;
   margin: 0;
   border: none;

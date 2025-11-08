@@ -461,7 +461,7 @@ const Panel: React.FC = () => {
           <TextTransformSegmented
             value={state.textTransform}
             onChange={handleTextTransformChange}
-            disabled={state.loading}
+            disabled={state.loading || !state.fontName?.trim()}
           />
         </div>
         <div className="feature-gap"></div>
@@ -471,7 +471,7 @@ const Panel: React.FC = () => {
             selected={state.stylisticSets}
             available={state.capabilities.ss}
             onChange={handleStylisticSetToggle}
-            disabled={state.loading}
+            disabled={state.loading || !state.fontName?.trim()}
           />
         </div>
         <div className="feature-gap"></div>
@@ -483,7 +483,7 @@ const Panel: React.FC = () => {
             supportsLIGA={state.capabilities.supportsLIGA}
             supportsDLIG={state.capabilities.supportsDLIG}
             onChange={handleLigatureChange}
-            disabled={state.loading}
+            disabled={state.loading || !state.fontName?.trim()}
           />
         </div>
         <div className="feature-gap"></div>
@@ -493,7 +493,7 @@ const Panel: React.FC = () => {
             value={state.swashLevel}
             availableLevels={state.capabilities.swashLevels}
             onChange={handleSwashLevelChange}
-            disabled={state.loading}
+            disabled={state.loading || !state.fontName?.trim()}
           />
         </div>
         <div className="feature-gap"></div>
@@ -503,7 +503,7 @@ const Panel: React.FC = () => {
             value={state.calt}
             supportsCALT={state.capabilities.supportsCALT}
             onChange={handleCaltChange}
-            disabled={state.loading}
+            disabled={state.loading || !state.fontName?.trim()}
           />
         </div>
         <div className="feature-gap"></div>
@@ -512,7 +512,7 @@ const Panel: React.FC = () => {
           <TextStylesToggleGroup
             selected={state.textStyles}
             onChange={handleTextStyleToggle}
-            disabled={state.loading}
+            disabled={state.loading || !state.fontName?.trim()}
           />
         </div>
         <div className="feature-gap"></div>
@@ -524,14 +524,18 @@ const Panel: React.FC = () => {
         <button
           onClick={handleReset}
           className="reset-button"
-          disabled={state.loading}
+          disabled={state.loading || !state.fontName?.trim()}
         >
-          RESET
+          <img 
+            src={chrome.runtime.getURL((state.loading || !state.fontName?.trim()) ? 'assets/refresh-disabled.svg' : 'assets/refresh.svg')} 
+            alt="Reset" 
+            className="reset-button-icon" 
+          />
         </button>
         <button
           onClick={handlePreviousFont}
           className="previous-font-button"
-          disabled={(!state.lastFontName && !state.fontName) || state.loading}
+          disabled={(!state.lastFontName && !state.fontName) || state.loading || !state.fontName?.trim()}
         >
           PREVIOUS
         </button>
