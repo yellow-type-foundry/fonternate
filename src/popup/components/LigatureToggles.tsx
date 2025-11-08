@@ -49,6 +49,28 @@ export const LigatureToggles: React.FC<LigatureTogglesProps> = ({
     <div className="opentype-feature-row">
       <div className="opentype-feature-label">Ligatures</div>
       <div className="opentype-feature-toggle">
+        {isEnabled && (
+          <div className="ligature-buttons-container">
+            <button
+              onClick={handleLigaClick}
+              className={`ligature-button ${liga ? 'active' : ''} ${!supportsLIGA && supportsLIGA !== undefined ? 'unsupported' : ''}`}
+              disabled={disabled}
+              title={!supportsLIGA && supportsLIGA !== undefined ? 'Not detected for this font' : ''}
+              type="button"
+            >
+              .LIGA
+            </button>
+            <button
+              onClick={handleDligClick}
+              className={`ligature-button ${dlig ? 'active' : ''} ${!supportsDLIG && supportsDLIG !== undefined ? 'unsupported' : ''}`}
+              disabled={disabled}
+              title={!supportsDLIG && supportsDLIG !== undefined ? 'Not detected for this font' : ''}
+              type="button"
+            >
+              .DLIG
+            </button>
+          </div>
+        )}
         <button
           onClick={handleToggleSwitch}
           className={`toggle-switch ${isEnabled ? 'active' : ''}`}
@@ -58,26 +80,6 @@ export const LigatureToggles: React.FC<LigatureTogglesProps> = ({
           <div className="toggle-switch-handle"></div>
           <img src={toggleIcon} alt="" className="toggle-switch-icon" />
         </button>
-        <div className="ligature-buttons-container">
-          <button
-            onClick={handleLigaClick}
-            className={`ligature-button ${liga ? 'active' : ''} ${!supportsLIGA && supportsLIGA !== undefined ? 'unsupported' : ''} ${!isEnabled ? 'disabled' : ''}`}
-            disabled={disabled || !isEnabled}
-            title={!supportsLIGA && supportsLIGA !== undefined ? 'Not detected for this font' : ''}
-            type="button"
-          >
-            .LIGA
-          </button>
-          <button
-            onClick={handleDligClick}
-            className={`ligature-button ${dlig ? 'active' : ''} ${!supportsDLIG && supportsDLIG !== undefined ? 'unsupported' : ''} ${!isEnabled ? 'disabled' : ''}`}
-            disabled={disabled || !isEnabled}
-            title={!supportsDLIG && supportsDLIG !== undefined ? 'Not detected for this font' : ''}
-            type="button"
-          >
-            .DLIG
-          </button>
-        </div>
       </div>
     </div>
   );

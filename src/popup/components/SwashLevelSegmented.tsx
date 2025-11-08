@@ -15,11 +15,12 @@ export const SwashLevelSegmented: React.FC<SwashLevelSegmentedProps> = ({
 }) => {
   // Swash is always ON/OFF toggle (0 = OFF, 1 = ON)
   const isOn = value > 0;
-  const isAvailable = availableLevels.length > 0 || availableLevels.includes(0);
+  // Swash is available if there are any levels available (including level 0 for OFF)
+  const isAvailable = availableLevels.length > 0 || availableLevels.includes(0) || availableLevels.length === 0;
   const toggleIcon = chrome.runtime.getURL('assets/f83045a8da0c6eaee8edbbd12f6c188c923b60be.svg');
 
   const handleToggle = () => {
-    if (!disabled && isAvailable) {
+    if (!disabled) {
       onChange(isOn ? 0 : 1);
     }
   };
@@ -31,7 +32,7 @@ export const SwashLevelSegmented: React.FC<SwashLevelSegmentedProps> = ({
         <button
           onClick={handleToggle}
           className={`toggle-switch ${isOn ? 'active' : ''}`}
-          disabled={disabled || !isAvailable}
+          disabled={disabled}
           type="button"
         >
           <div className="toggle-switch-handle"></div>
