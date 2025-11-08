@@ -1,8 +1,8 @@
 # Chrome Web Store Submission Guide
 
 ## Package Information
-- **Package File**: `fonternate-v1.0.2.zip` (120KB)
-- **Version**: 1.0.2
+- **Package File**: `fonternate-v1.0.3.zip` (120KB)
+- **Version**: 1.0.3
 - **Manifest Version**: 3
 
 ## Store Listing Requirements
@@ -143,7 +143,15 @@ Example: `https://github.com/yourusername/fonternate`
 
 ## Version History
 
-### v1.0.2 (Current)
+### v1.0.3 (Current)
+- Replaced font weight segmented control with interactive slider component
+- Added smooth drag animations with requestAnimationFrame
+- Improved weight label styling with active state lift animation
+- Updated inactive label color to #d0bfb9
+- Enhanced handle styling with 16px width and 100px border radius
+- Improved alignment with exact tick mark positioning
+
+### v1.0.2
 - Centered font input text
 - Removed debug console.log statements
 - Updated description
