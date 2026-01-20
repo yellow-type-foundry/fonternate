@@ -1,5 +1,6 @@
 import { FontSettings, ChromeMessage, AppState, FontCapabilities } from '../types';
 import { parseFontName } from './fontUtils';
+import { initDevMode, isExtensionContext } from './chromeDev';
 
 export const defaultFontSettings: FontSettings = {
   fontFamily: '',
@@ -58,26 +59,34 @@ export const defaultAppState: AppState = {
   lastFontName: undefined,
 };
 
+// Initialize dev mode if needed (only once)
+if (typeof window !== 'undefined') {
+  initDevMode();
+}
+
 export const sendMessage = async (message: ChromeMessage): Promise<any> => {
   return new Promise(async (resolve, reject) => {
-    if (typeof chrome !== 'undefined' && chrome.runtime) {
+    // Use dev mode Chrome API if not in extension context
+    const chromeAPI = typeof chrome !== 'undefined' && chrome.runtime ? chrome : (window as any).chrome;
+    
+    if (chromeAPI && chromeAPI.runtime) {
       // Get the current tab ID if available (for popup context)
       let tabId: number | undefined;
       try {
-        if (chrome.tabs) {
-          const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (chromeAPI.tabs) {
+          const tabs = await chromeAPI.tabs.query({ active: true, currentWindow: true });
           tabId = tabs[0]?.id;
         }
       } catch (e) {
         // Ignore errors getting tab ID
       }
 
-      chrome.runtime.sendMessage({
+      chromeAPI.runtime.sendMessage({
         ...message,
         tabId, // Include tab ID in message
       }, (response: any) => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
+        if (chromeAPI.runtime.lastError) {
+          reject(chromeAPI.runtime.lastError);
         } else {
           resolve(response);
         }
@@ -90,8 +99,9 @@ export const sendMessage = async (message: ChromeMessage): Promise<any> => {
 
 export const getFontSettings = async (): Promise<FontSettings> => {
   try {
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-      const result = await chrome.storage.sync.get(['fontSettings']);
+    const chromeAPI = typeof chrome !== 'undefined' && chrome.storage ? chrome : (window as any).chrome;
+    if (chromeAPI && chromeAPI.storage) {
+      const result = await chromeAPI.storage.sync.get(['fontSettings']);
       return result.fontSettings || defaultFontSettings;
     }
     return defaultFontSettings;
@@ -103,8 +113,9 @@ export const getFontSettings = async (): Promise<FontSettings> => {
 
 export const saveFontSettings = async (settings: FontSettings): Promise<void> => {
   try {
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-      await chrome.storage.sync.set({ fontSettings: settings });
+    const chromeAPI = typeof chrome !== 'undefined' && chrome.storage ? chrome : (window as any).chrome;
+    if (chromeAPI && chromeAPI.storage) {
+      await chromeAPI.storage.sync.set({ fontSettings: settings });
       // Save previous font when a new font is applied
       if (settings.fontFamily && settings.isEnabled) {
         await chrome.storage.sync.set({ previousFont: settings.fontFamily });
@@ -117,8 +128,9 @@ export const saveFontSettings = async (settings: FontSettings): Promise<void> =>
 
 export const getPreviousFont = async (): Promise<string> => {
   try {
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-      const result = await chrome.storage.sync.get(['previousFont']);
+    const chromeAPI = typeof chrome !== 'undefined' && chrome.storage ? chrome : (window as any).chrome;
+    if (chromeAPI && chromeAPI.storage) {
+      const result = await chromeAPI.storage.sync.get(['previousFont']);
       return result.previousFont || '';
     }
     return '';
@@ -130,8 +142,9 @@ export const getPreviousFont = async (): Promise<string> => {
 
 export const getAppState = async (): Promise<AppState> => {
   try {
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-      const result = await chrome.storage.sync.get(['appState']);
+    const chromeAPI = typeof chrome !== 'undefined' && chrome.storage ? chrome : (window as any).chrome;
+    if (chromeAPI && chromeAPI.storage) {
+      const result = await chromeAPI.storage.sync.get(['appState']);
       if (result.appState) {
         // Convert Set from array
         const state = result.appState;
@@ -167,14 +180,15 @@ export const getAppState = async (): Promise<AppState> => {
 
 export const saveAppState = async (state: AppState): Promise<void> => {
   try {
-    if (typeof chrome !== 'undefined' && chrome.storage) {
+    const chromeAPI = typeof chrome !== 'undefined' && chrome.storage ? chrome : (window as any).chrome;
+    if (chromeAPI && chromeAPI.storage) {
       // Convert Set to array for storage
       const stateToSave = {
         ...state,
         stylisticSets: Array.from(state.stylisticSets),
         textStyles: Array.from(state.textStyles),
       };
-      await chrome.storage.sync.set({ appState: stateToSave });
+      await chromeAPI.storage.sync.set({ appState: stateToSave });
       
       // Save previous font when a new font is applied
       if (state.fontName && state.fontName !== state.lastFontName) {

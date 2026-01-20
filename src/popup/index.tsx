@@ -13,6 +13,8 @@ import {
   ContextualAltToggle,
   TextStylesToggleGroup,
 } from './components';
+import { DevLayout } from './DevLayout';
+import { isExtensionContext } from '../utils/chromeDev';
 import './popup.css';
 
 const Panel: React.FC = () => {
@@ -473,7 +475,7 @@ const Panel: React.FC = () => {
     }
   };
 
-  return (
+  const popupContent = (
     <div className="popup-content">
       <div className="popup-main-content">
         <FontNameInput
@@ -624,6 +626,13 @@ const Panel: React.FC = () => {
       </div>
     </div>
   );
+
+  // In dev mode, wrap with DevLayout to show pangrams on the side
+  if (!isExtensionContext()) {
+    return <DevLayout state={state}>{popupContent}</DevLayout>;
+  }
+
+  return popupContent;
 };
 
 // Initialize React app

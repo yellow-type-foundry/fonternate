@@ -8,5 +8,6 @@ export { ContextualAltToggle } from './ContextualAltToggle';
 export { TextStylesToggleGroup } from './TextStylesToggleGroup';
 export { SegmentedControl } from './SegmentedControl';
 export type { SegmentedControlOption } from './SegmentedControl';
+export { TypeTester } from './TypeTester';
 
 

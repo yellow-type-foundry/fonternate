@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc && webpack --mode production && cp manifest.json popup.html dist/ && cp icon*.png dist/ && cp src/popup/*.svg dist/ 2>/dev/null || true && cp -r src/popup/assets dist/ 2>/dev/null || true",
     "dev": "webpack --mode development --watch",
+    "dev:ui": "webpack serve --config webpack.dev.js",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist",
     "rebuild": "npm run clean && npm run build"
@@ -20,6 +21,8 @@
     "typescript": "^5.3.3",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1",
+    "html-webpack-plugin": "^5.5.3",
     "ts-loader": "^9.5.1",
     "css-loader": "^6.8.1",
     "style-loader": "^3.3.3",
