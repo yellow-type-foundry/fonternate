@@ -312,18 +312,16 @@ export const FontWeightSelector: React.FC<FontWeightSelectorProps> = ({
         <div ref={innerContainerRef} className="slider-inner-container">
           {/* Tracker - CSS-based track with tick marks */}
           <div ref={trackerRef} className="slider-tracker">
-            {/* Custom tick strokes */}
+            {/* Custom tick dots */}
             <div className="slider-ticks">
               {allWeights.map((weight, index) => {
                 const tickPositionInSVG = TICK_POSITIONS[index] / SVG_WIDTH;
                 const leftPercent = tickPositionInSVG * 100;
                 const available = isWeightAvailable(weight.suffix);
-                // Alternating pattern: even index (0,2,4,6,8) = long, odd index (1,3,5,7) = short
-                const isLong = index % 2 === 0;
                 return (
                   <div
                     key={`tick-${weight.suffix}`}
-                    className={`slider-tick-line ${available ? '' : 'disabled'} ${isLong ? 'long' : 'short'}`}
+                    className={`slider-tick-line ${available ? '' : 'disabled'}`}
                     style={{
                       left: `${leftPercent}%`,
                     }}

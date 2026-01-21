@@ -121,23 +121,23 @@
 .slider-tick-line {
   position: absolute;
   top: 50%;
-  transform: translateY(-50%);
-  width: 2px;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 4px;
+  min-width: 4px;
+  max-width: 4px;
+  min-height: 4px;
+  max-height: 4px;
   background: #b5a29b; /* Lighter but bolder color for available ticks */
   opacity: 1;
-  border-radius: 1px; /* Rounded ends */
-}
-
-.slider-tick-line.long {
-  height: 100%; /* Full height for long ticks */
-}
-
-.slider-tick-line.short {
-  height: 60%; /* Shorter height for short ticks */
+  border-radius: 50%; /* Circular dots */
+  /* Prevent subpixel rendering issues */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .slider-tick-line.disabled {
-  width: 2px;
   opacity: 0.25; /* More faded opacity for unavailable weights */
 }
 
