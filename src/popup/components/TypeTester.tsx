@@ -21,6 +21,11 @@ const LIGATURES = 'fi fl ff ffi ffl';
 export const TypeTester: React.FC<TypeTesterProps> = ({ state }) => {
   const fullFontName = buildFontName(state.fontName, state.fontWeight);
   
+  // Debug log
+  if (fullFontName) {
+    console.log('[TypeTester] Font name:', fullFontName);
+  }
+  
   // Build font-feature-settings CSS
   const features: string[] = [];
   
@@ -48,7 +53,7 @@ export const TypeTester: React.FC<TypeTesterProps> = ({ state }) => {
   const textTransform = state.textTransform !== 'none' ? state.textTransform : undefined;
   
   const fontStyle: React.CSSProperties = {
-    fontFamily: fullFontName || 'inherit',
+    fontFamily: fullFontName ? `"${fullFontName}", sans-serif` : 'inherit',
     fontFeatureSettings: fontFeatureSettings,
     textTransform: textTransform,
   };

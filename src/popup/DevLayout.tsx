@@ -49,7 +49,7 @@ export const DevLayout: React.FC<DevLayoutProps> = ({ children, state }) => {
   const textTransform = state.textTransform !== 'none' ? state.textTransform : undefined;
   
   const fontStyle: React.CSSProperties = {
-    fontFamily: fullFontName || 'inherit',
+    fontFamily: fullFontName ? `"${fullFontName}", sans-serif` : 'inherit',
     fontFeatureSettings: fontFeatureSettings,
     textTransform: textTransform,
   };

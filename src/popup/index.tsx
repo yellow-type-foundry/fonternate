@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AppState, FontCapabilities, TextTransform } from '../types';
 import { getAppState, saveAppState, sendMessage, defaultAppState } from '../utils/chrome';
-import { parseFontName, buildFontName } from '../utils/fontUtils';
+import { parseFontName, buildFontName, getAvailableWeightSuffixes } from '../utils/fontUtils';
 import {
   FontNameInput,
   FontWeightSelector,
@@ -19,6 +19,7 @@ import './popup.css';
 
 const Panel: React.FC = () => {
   const [state, setState] = useState<AppState>(defaultAppState);
+  const [availableWeightSuffixes, setAvailableWeightSuffixes] = useState<Set<string> | undefined>(undefined);
 
   useEffect(() => {
     initializePanel();
@@ -182,6 +183,7 @@ const Panel: React.FC = () => {
         error: null,
         loading: false,
       }));
+      setAvailableWeightSuffixes(undefined);
       return;
     }
 
@@ -194,12 +196,23 @@ const Panel: React.FC = () => {
     });
 
     try {
-      const response = await sendMessage({
-        type: 'DETECT_CAPABILITIES',
-        payload: { fontName: fullFontName },
-      });
+      // Detect capabilities and available weights in parallel
+      const [capabilitiesResponse, weightsResponse] = await Promise.all([
+        sendMessage({
+          type: 'DETECT_CAPABILITIES',
+          payload: { fontName: fullFontName },
+        }),
+        sendMessage({
+          type: 'CHECK_FONT_WEIGHTS',
+          payload: {
+            baseFontName: baseName,
+            weightSuffixes: getAvailableWeightSuffixes().map(w => w.suffix),
+          },
+        }).catch(() => ({ availableWeights: [] })), // Fallback if check fails
+      ]);
 
-      const capabilities: FontCapabilities = response?.capabilities || defaultAppState.capabilities;
+      const capabilities: FontCapabilities = capabilitiesResponse?.capabilities || defaultAppState.capabilities;
+      const availableWeights: string[] = weightsResponse?.availableWeights || [];
       
       setState(prev => {
         // Only update capabilities if this is still the current font name (user might have changed it)
@@ -218,12 +231,23 @@ const Panel: React.FC = () => {
           error: null,
         };
       });
+
+      // Update available weights
+      if (availableWeights.length > 0) {
+        console.log('[Fonternate] Available font weights detected:', availableWeights);
+        setAvailableWeightSuffixes(new Set(availableWeights));
+      } else {
+        // If no weights detected, assume all are available (fallback)
+        console.log('[Fonternate] No weights detected, assuming all are available');
+        setAvailableWeightSuffixes(undefined);
+      }
     } catch (error) {
       setState(prev => ({
         ...prev,
         loading: false,
         error: error instanceof Error ? error.message : 'Failed to detect font capabilities',
       }));
+      setAvailableWeightSuffixes(undefined);
     }
   }, [applyFont]);
 
@@ -517,6 +541,7 @@ const Panel: React.FC = () => {
               }
             }}
             disabled={state.loading}
+            availableWeightSuffixes={availableWeightSuffixes}
           />
         </div>
         <div className="feature-gap"></div>

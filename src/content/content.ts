@@ -64,6 +64,9 @@ class FontInjector {
           const isSupported = this.checkFeatureSupport(fontFamily, feature);
           sendResponse({ isSupported });
           return true; // Keep message channel open for async response
+        case 'CHECK_FONT_WEIGHTS':
+          this.handleCheckFontWeights(message.payload, sendResponse);
+          return true; // Keep message channel open for async response
       }
     });
 
@@ -311,25 +314,7 @@ class FontInjector {
       return;
     }
 
-    // Wait for document.body to be ready if needed
-    const waitForBody = (): Promise<void> => {
-      return new Promise((resolve) => {
-        if (document.body) {
-          resolve();
-        } else {
-          const checkBody = () => {
-            if (document.body) {
-              resolve();
-            } else {
-              setTimeout(checkBody, 10);
-            }
-          };
-          checkBody();
-        }
-      });
-    };
-
-    await waitForBody();
+    await this.waitForBody();
 
     const capabilities = {
       ss: [] as number[],
@@ -355,6 +340,169 @@ class FontInjector {
     }
 
     sendResponse({ capabilities });
+  }
+
+  private async handleCheckFontWeights(
+    payload: { baseFontName: string; weightSuffixes: string[] },
+    sendResponse: (response: any) => void
+  ) {
+    const { baseFontName, weightSuffixes } = payload;
+    
+    if (!baseFontName?.trim() || !weightSuffixes || weightSuffixes.length === 0) {
+      sendResponse({ availableWeights: [] });
+      return;
+    }
+
+    await this.waitForBody();
+
+    const availableWeights: string[] = [];
+    const testText = 'Ag';
+    const fontSize = '72px';
+
+    console.log('[Fonternate] Checking font weights for:', baseFontName);
+
+    for (const suffix of weightSuffixes) {
+      const fontName = `${baseFontName}-${suffix}`;
+      const isAvailable = this.checkFontExists(fontName, testText, fontSize);
+      console.log(`[Fonternate] Font ${fontName} available:`, isAvailable);
+      if (isAvailable) {
+        availableWeights.push(suffix);
+      }
+    }
+
+    console.log('[Fonternate] Available weights:', availableWeights);
+    sendResponse({ availableWeights });
+  }
+
+  private checkFontExists(fontFamily: string, testText: string, fontSize: string): boolean {
+    if (!document.body) return false;
+
+    // Method 1: Use Font Loading API if available (most reliable)
+    if (document.fonts && document.fonts.check) {
+      try {
+        // Check if the font is loaded with the exact name
+        const fontSpec = `"${fontFamily}"`;
+        if (document.fonts.check(fontSpec)) {
+          return true;
+        }
+      } catch (e) {
+        // Continue to fallback method
+      }
+    }
+
+    // Method 2: Create test elements and compare rendering
+    // This method checks if the font actually renders differently from fallback
+    const testElement = document.createElement('span');
+    testElement.style.fontFamily = `"${fontFamily}", monospace`;
+    testElement.style.position = 'absolute';
+    testElement.style.visibility = 'hidden';
+    testElement.style.fontSize = fontSize;
+    testElement.style.whiteSpace = 'nowrap';
+    testElement.style.fontWeight = 'normal';
+    testElement.style.fontStyle = 'normal';
+    testElement.textContent = testText;
+    
+    // Create a fallback element with a known fallback font
+    const fallbackElement = document.createElement('span');
+    fallbackElement.style.fontFamily = 'monospace';
+    fallbackElement.style.position = 'absolute';
+    fallbackElement.style.visibility = 'hidden';
+    fallbackElement.style.fontSize = fontSize;
+    fallbackElement.style.whiteSpace = 'nowrap';
+    fallbackElement.style.fontWeight = 'normal';
+    fallbackElement.style.fontStyle = 'normal';
+    fallbackElement.textContent = testText;
+    
+    // Create a third element with a different fallback to compare
+    const sansFallbackElement = document.createElement('span');
+    sansFallbackElement.style.fontFamily = 'sans-serif';
+    sansFallbackElement.style.position = 'absolute';
+    sansFallbackElement.style.visibility = 'hidden';
+    sansFallbackElement.style.fontSize = fontSize;
+    sansFallbackElement.style.whiteSpace = 'nowrap';
+    sansFallbackElement.style.fontWeight = 'normal';
+    sansFallbackElement.style.fontStyle = 'normal';
+    sansFallbackElement.textContent = testText;
+    
+    document.body.appendChild(testElement);
+    document.body.appendChild(fallbackElement);
+    document.body.appendChild(sansFallbackElement);
+    
+    // Force a reflow to ensure styles are applied
+    void testElement.offsetWidth;
+    void fallbackElement.offsetWidth;
+    void sansFallbackElement.offsetWidth;
+    
+    // Get computed font families
+    const computedFont = window.getComputedStyle(testElement).fontFamily.toLowerCase();
+    const fallbackFont = window.getComputedStyle(fallbackElement).fontFamily.toLowerCase();
+    const sansFallbackFont = window.getComputedStyle(sansFallbackElement).fontFamily.toLowerCase();
+    
+    // Get widths and heights (checking both dimensions for more accuracy)
+    const testWidth = testElement.offsetWidth;
+    const testHeight = testElement.offsetHeight;
+    const fallbackWidth = fallbackElement.offsetWidth;
+    const fallbackHeight = fallbackElement.offsetHeight;
+    const sansFallbackWidth = sansFallbackElement.offsetWidth;
+    const sansFallbackHeight = sansFallbackElement.offsetHeight;
+    
+    // Clean up
+    document.body.removeChild(testElement);
+    document.body.removeChild(fallbackElement);
+    document.body.removeChild(sansFallbackElement);
+    
+    // Font is available if:
+    // 1. The computed font includes the font name (not just fallback)
+    // 2. The font renders differently from both fallbacks (width AND height)
+    const fontNameLower = fontFamily.toLowerCase();
+    const hasFontName = computedFont.includes(fontNameLower) && 
+                       !computedFont.startsWith('monospace') &&
+                       !computedFont.startsWith('sans-serif');
+    
+    // Check if dimensions differ significantly (more than 5px to be strict)
+    // The test font should differ from both fallbacks in width OR height
+    const widthDiffersFromMonospace = Math.abs(testWidth - fallbackWidth) > 5;
+    const heightDiffersFromMonospace = Math.abs(testHeight - fallbackHeight) > 2;
+    const widthDiffersFromSans = Math.abs(testWidth - sansFallbackWidth) > 5;
+    const heightDiffersFromSans = Math.abs(testHeight - sansFallbackHeight) > 2;
+    
+    const differsFromMonospace = widthDiffersFromMonospace || heightDiffersFromMonospace;
+    const differsFromSans = widthDiffersFromSans || heightDiffersFromSans;
+    const dimensionsDiffer = differsFromMonospace || differsFromSans;
+    
+    // Both conditions must be true for font to be considered available
+    // This prevents false positives from font synthesis
+    const isAvailable = hasFontName && dimensionsDiffer;
+    
+    if (!isAvailable) {
+      console.log(`[Fonternate] Font "${fontFamily}" not available:`, {
+        hasFontName,
+        dimensionsDiffer,
+        computedFont,
+        testWidth,
+        fallbackWidth,
+        sansFallbackWidth
+      });
+    }
+    
+    return isAvailable;
+  }
+
+  private waitForBody(): Promise<void> {
+    return new Promise((resolve) => {
+      if (document.body) {
+        resolve();
+      } else {
+        const checkBody = () => {
+          if (document.body) {
+            resolve();
+          } else {
+            setTimeout(checkBody, 10);
+          }
+        };
+        checkBody();
+      }
+    });
   }
 
   private handleRevertToPreviousFont(payload: { fontName: string }) {
