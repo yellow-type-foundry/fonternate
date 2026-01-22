@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Fonternate",
-  "version": "1.10.5",
+  "version": "1.12.5",
   "description": "Override fonts on any webpage with locally installed fonts. Test typography with advanced OpenType features and weight selection.",
   "permissions": [
     "activeTab",

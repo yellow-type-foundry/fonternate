@@ -273,21 +273,47 @@ class FontInjector {
       
       // For names like "ytfmillie", try splitting into "YTF Millie" pattern
       // Look for common patterns: prefix + family name
-      const commonPrefixes = ['ytf', 'ltf', 'otf', 'ttf'];
+      const commonPrefixes = ['ytf', 'ltf', 'otf', 'ttf', 'sf'];
       for (const prefix of commonPrefixes) {
         if (lower.startsWith(prefix) && lower.length > prefix.length) {
           const familyPart = lower.slice(prefix.length);
           if (familyPart.length > 2) {
-            // Try "YTF Millie" format
+            // Try "YTF Millie" or "SF Pro" format
             const spaced = `${prefix.toUpperCase()} ${this.capitalizeFontName(familyPart)}`;
             variants.add(spaced);
-            // Try "YTFMillie" format
+            // Try "YTFMillie" or "SFPro" format
             const noSpace = `${prefix.toUpperCase()}${this.capitalizeFontName(familyPart)}`;
             variants.add(noSpace);
             // Try just the family name
             variants.add(this.capitalizeFontName(familyPart));
           }
         }
+      }
+      
+      // Special handling for Apple system fonts
+      // "SF Pro" might be registered as "SF Pro Text", "SF Pro Display", etc.
+      if (lower.startsWith('sf pro')) {
+        variants.add('SF Pro Text');
+        variants.add('SF Pro Display');
+        variants.add('SFPro Text');
+        variants.add('SFPro Display');
+      }
+      if (lower.startsWith('sf mono')) {
+        variants.add('SF Mono');
+        variants.add('SFMono');
+      }
+      
+      // For multi-word names, try common variations
+      const words = trimmed.split(/\s+/);
+      if (words.length >= 2) {
+        // Try "Word1Word2" format
+        const noSpace = words.join('');
+        variants.add(noSpace);
+        variants.add(this.capitalizeFontName(noSpace));
+        // Try "Word1-Word2" format
+        const hyphenated = words.join('-');
+        variants.add(hyphenated);
+        variants.add(this.capitalizeFontName(hyphenated));
       }
       
       return Array.from(variants.values());
@@ -399,12 +425,19 @@ class FontInjector {
     const fontSize = '72px';
     const fontExists = this.checkFontExists(fontName, testText, fontSize);
     
+    // For system fonts, be more lenient - they might be available even if detection is strict
+    const isSystemFont = /^(sf|helvetica|arial|times|georgia|verdana|courier|system)/i.test(fontName.toLowerCase());
+    const shouldProceed = fontExists || isSystemFont;
+    
     console.log('[Fonternate] Detecting capabilities for font:', fontName);
     console.log('[Fonternate] Font exists:', fontExists);
+    if (isSystemFont && !fontExists) {
+      console.log('[Fonternate] System font detected - proceeding with capability detection despite strict check');
+    }
     
-    // If font doesn't exist, return default capabilities
+    // If font doesn't exist and it's not a system font, return default capabilities
     // This prevents false positives from fallback fonts
-    if (!fontExists) {
+    if (!shouldProceed) {
       console.warn('[Fonternate] Font does not exist - returning default capabilities');
       sendResponse({
         capabilities: {
@@ -970,11 +1003,38 @@ class FontInjector {
     const isSynthesized = computedFont === fallbackFont || 
                          computedFont === sansFallbackFont;
     
+    // Special handling for system fonts (SF Pro, SF Mono, etc.)
+    // These are often available but might not match exactly in computed style
+    const isSystemFont = /^(sf|helvetica|arial|times|georgia|verdana|courier)/i.test(fontNameLower);
+    
+    // If computed font contains any of our requested font names, it's likely available
+    // This handles cases where browser echoes back our font-family stack
+    const requestedNames = fontFamily.split(/[\s,]+/).map(n => n.toLowerCase().replace(/['"]/g, ''));
+    const computedContainsRequested = requestedNames.some(reqName => {
+      if (reqName.length <= 2) return false;
+      return computedFontParts.some(part => {
+        const partLower = normalize(part);
+        const reqNormalized = normalize(reqName);
+        return partLower.includes(reqNormalized) || reqNormalized.includes(partLower);
+      });
+    });
+    
+    const isLikelySystemFont = (hasFontName || computedContainsRequested) && !isSynthesized && (
+      computedFontParts.some(part => {
+        const partLower = part.toLowerCase();
+        return partLower.includes('sf') || 
+               partLower.includes('helvetica') || 
+               partLower.includes('arial') ||
+               partLower.includes('system') ||
+               partLower.includes('mono');
+      })
+    );
+    
     // Font is available if:
-    // 1. Font name is in computed style OR dimensions differ (more lenient)
+    // 1. Font name is in computed style OR dimensions differ OR computed contains our requested names
     // 2. Font is NOT synthesized
-    // Be more lenient - if font name matches (direct or normalized), trust it even if dimensions are similar
-    const isAvailable = (hasFontName || dimensionsDiffer) && !isSynthesized;
+    // 3. For system fonts, be even more lenient - if computed contains our names and it's not synthesized, trust it
+    const isAvailable = (hasFontName || dimensionsDiffer || computedContainsRequested || (isSystemFont && isLikelySystemFont)) && !isSynthesized;
     
     if (!isAvailable) {
       console.log(`[Fonternate] Font "${fontFamily}" not available:`, {
