@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Fonternate",
-  "version": "1.0.3",
+  "version": "1.10.5",
   "description": "Override fonts on any webpage with locally installed fonts. Test typography with advanced OpenType features and weight selection.",
   "permissions": [
     "activeTab",
@@ -24,8 +24,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_end",
       "all_frames": false
     }
@@ -54,7 +58,9 @@
         "assets/*.svg",
         "*.svg"
       ],
-      "matches": ["<all_urls>"]
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ]
-} 
+}
