@@ -31,7 +31,7 @@
 .font-weight-slider-container {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
   width: 100%;
 }
 
@@ -86,7 +86,7 @@
   cursor: not-allowed;
 }
 
-/* Inner container with 8px padding - handle sits here */
+/* Inner container with equal padding on all sides - handle sits here */
 .slider-inner-container {
   position: relative;
   padding: 8px;

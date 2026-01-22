@@ -13,6 +13,9 @@ import {
   LigatureToggles,
   ContextualAltToggle,
   TextStylesToggleGroup,
+  TrackingSlider,
+  SizeSlider,
+  LeadingSlider,
 } from './components';
 import { DevLayout } from './DevLayout';
 import { isExtensionContext } from '../utils/chromeDev';
@@ -96,6 +99,9 @@ const Panel: React.FC = () => {
               dlig: currentState.dlig,
               calt: currentState.calt,
               textStyles: Array.from(currentState.textStyles),
+              tracking: currentState.tracking,
+              fontSize: currentState.fontSize,
+              leading: currentState.leading,
             },
           })
             .then(() => {
@@ -450,6 +456,45 @@ const Panel: React.FC = () => {
     });
   };
 
+  const handleTrackingChange = (tracking: number) => {
+    setState(prev => {
+      const newState = { ...prev, tracking };
+      // Apply immediately in real-time
+      if (prev.fontName?.trim()) {
+        applyFont(newState, true); // Skip state update to avoid re-render loop
+      }
+      // Save state asynchronously
+      saveAppState(newState);
+      return newState;
+    });
+  };
+
+  const handleFontSizeChange = (fontSize: number) => {
+    setState(prev => {
+      const newState = { ...prev, fontSize };
+      // Apply immediately in real-time
+      if (prev.fontName?.trim()) {
+        applyFont(newState, true); // Skip state update to avoid re-render loop
+      }
+      // Save state asynchronously
+      saveAppState(newState);
+      return newState;
+    });
+  };
+
+  const handleLeadingChange = (leading: number) => {
+    setState(prev => {
+      const newState = { ...prev, leading };
+      // Apply immediately in real-time
+      if (prev.fontName?.trim()) {
+        applyFont(newState, true); // Skip state update to avoid re-render loop
+      }
+      // Save state asynchronously
+      saveAppState(newState);
+      return newState;
+    });
+  };
+
   const handlePreviousFont = async () => {
     // Toggle between current font and previous font
     // Use font names as-is - don't add suffixes
@@ -493,6 +538,8 @@ const Panel: React.FC = () => {
             dlig: state.dlig,
             calt: state.calt,
             textStyles: Array.from(state.textStyles),
+            tracking: state.tracking,
+            fontSize: state.fontSize,
           },
         });
 
@@ -544,6 +591,8 @@ const Panel: React.FC = () => {
             dlig: state.dlig,
             calt: state.calt,
             textStyles: Array.from(state.textStyles),
+            tracking: state.tracking,
+            fontSize: state.fontSize,
           },
         });
 
@@ -601,6 +650,9 @@ const Panel: React.FC = () => {
         dlig: false,
         calt: false,
         textStyles: new Set<string>(),
+        tracking: 0,
+        fontSize: 16,
+        leading: 1.5,
         capabilities: defaultAppState.capabilities,
         error: null,
         loading: false,
@@ -721,6 +773,34 @@ const Panel: React.FC = () => {
             disabled={state.loading || !state.fontName?.trim()}
           />
         </div>
+        {state.textStyles.size > 0 && (
+          <>
+            <div className="feature-gap"></div>
+            <div className="feature-row-wrapper">
+              <TrackingSlider
+                value={state.tracking}
+                onChange={handleTrackingChange}
+                disabled={state.loading || !state.fontName?.trim()}
+              />
+            </div>
+            <div className="feature-gap"></div>
+            <div className="feature-row-wrapper">
+              <SizeSlider
+                value={state.fontSize}
+                onChange={handleFontSizeChange}
+                disabled={state.loading || !state.fontName?.trim()}
+              />
+            </div>
+            <div className="feature-gap"></div>
+            <div className="feature-row-wrapper">
+              <LeadingSlider
+                value={state.leading}
+                onChange={handleLeadingChange}
+                disabled={state.loading || !state.fontName?.trim()}
+              />
+            </div>
+          </>
+        )}
         <div className="feature-gap"></div>
         <hr className="feature-divider" />
         <div className="feature-gap"></div>

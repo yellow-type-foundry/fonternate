@@ -219,6 +219,9 @@ class FontInjector {
     dlig: boolean;
     calt: boolean;
     textStyles?: string[];
+    tracking?: number;              // Letter-spacing in em units
+    fontSize?: number;               // Font-size in px units
+    leading?: number;               // Line-height (unitless)
   }) {
     if (!payload.fontName?.trim()) {
       this.removeFontStyle();
@@ -332,6 +335,21 @@ class FontInjector {
     })();
     css += ` font-weight: ${fontWeightValue} !important;`;
     console.log('[Fonternate] Applied font-weight:', fontWeightValue);
+    
+    // Add tracking (letter-spacing) if textStyles are selected
+    if (payload.textStyles && payload.textStyles.length > 0 && payload.tracking !== undefined) {
+      css += ` letter-spacing: ${payload.tracking}em !important;`;
+    }
+    
+    // Add font-size if textStyles are selected
+    if (payload.textStyles && payload.textStyles.length > 0 && payload.fontSize !== undefined) {
+      css += ` font-size: ${payload.fontSize}px !important;`;
+    }
+    
+    // Add leading (line-height) if textStyles are selected
+    if (payload.textStyles && payload.textStyles.length > 0 && payload.leading !== undefined) {
+      css += ` line-height: ${payload.leading} !important;`;
+    }
     
     // Add text-transform if set
     if (payload.textTransform && payload.textTransform !== 'none') {
@@ -1109,6 +1127,9 @@ class FontInjector {
       dlig: appState.dlig,
       calt: appState.calt,
       textStyles: Array.from(appState.textStyles),
+      tracking: appState.tracking,
+      fontSize: appState.fontSize,
+      leading: appState.leading,
     });
   }
 }

@@ -18,6 +18,9 @@ export interface AppState {
   dlig: boolean;                    // discretionary ligatures; default false
   calt: boolean;                    // contextual alternates; default true
   textStyles: Set<string>;          // e.g., ['h1', 'h2', 'p']; multi-select; default empty
+  tracking: number;                 // Letter-spacing in em units, default 0
+  fontSize: number;                 // Font-size in px units, default 16
+  leading: number;                 // Line-height (unitless), default 1.5
   capabilities: FontCapabilities;   // detected per selected font
   loading: boolean;                 // while applying or probing features
   error?: string | null;            // UX toast/message
