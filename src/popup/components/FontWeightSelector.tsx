@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { buildFontName, getAvailableWeightSuffixes } from '../../utils/fontUtils';
+import { buildFontName, getAvailableWeightSuffixes, parseFontName } from '../../utils/fontUtils';
 
 interface FontWeightSelectorProps {
-  fontName: string;              // Base font family name (without weight)
+  fontName: string;              // Font family name (as user typed it, may or may not include weight suffix)
   fontWeight: string;             // Current weight suffix (e.g., "regular", "bold")
-  onChange: (newFontName: string) => void;  // Called with full font name (baseName-weight)
+  onChange: (newFontName: string, newWeight: string) => void;  // Called with base font name and weight suffix separately
   disabled?: boolean;
   availableWeightSuffixes?: Set<string>;  // Set of available weight suffixes (e.g., Set(['regular', 'bold']))
 }
@@ -34,24 +34,17 @@ export const FontWeightSelector: React.FC<FontWeightSelectorProps> = ({
     ? allWeights.filter(w => availableWeightSuffixes.has(w.suffix))
     : allWeights;
 
-  // Debug log
+  // Debug log (only log when weights are restricted)
   useEffect(() => {
-    if (availableWeightSuffixes) {
+    if (availableWeightSuffixes && availableWeightSuffixes.size > 0) {
       console.log('[FontWeightSelector] Available weights:', Array.from(availableWeightSuffixes));
-      console.log('[FontWeightSelector] Filtered availableWeights:', availableWeights.map(w => w.suffix));
-    } else {
-      console.log('[FontWeightSelector] No weight restrictions - all weights available');
     }
-  }, [availableWeightSuffixes, availableWeights]);
+  }, [availableWeightSuffixes]);
 
   // Helper to check if a weight is available
   const isWeightAvailable = useCallback((suffix: string): boolean => {
     if (!availableWeightSuffixes) return true; // All weights available if not specified
-    const isAvailable = availableWeightSuffixes.has(suffix);
-    if (!isAvailable) {
-      console.log(`[FontWeightSelector] Weight ${suffix} is NOT available`);
-    }
-    return isAvailable;
+    return availableWeightSuffixes.has(suffix);
   }, [availableWeightSuffixes]);
 
   // Find nearest available weight index from a given index in allWeights
@@ -130,16 +123,16 @@ export const FontWeightSelector: React.FC<FontWeightSelectorProps> = ({
     // Get the current weight index in all weights array
     let allWeightsIndex = allWeights.findIndex(w => w.suffix === fontWeight);
     
-    // If current weight is unavailable, find the nearest available one
+    // If current weight is unavailable, position handle at the unavailable weight position
+    // Do NOT fall back to an available weight - this prevents using fallback fonts
     if (allWeightsIndex < 0 || !isWeightAvailable(fontWeight)) {
-      // Find nearest available weight
-      if (availableWeights.length > 0) {
-        // Use the first available weight as fallback, or find nearest
-        const firstAvailable = availableWeights[0];
-        allWeightsIndex = allWeights.findIndex(w => w.suffix === firstAvailable.suffix);
-      } else {
-        allWeightsIndex = 0; // Fallback to first weight if no available weights
+      // If weight is unavailable, still show handle at that position (but it will be disabled)
+      // This clearly indicates which weight is selected but unavailable
+      if (allWeightsIndex < 0) {
+        // Weight not found in allWeights, use first position as fallback for display only
+        allWeightsIndex = 0;
       }
+      // Keep allWeightsIndex at the unavailable weight position - don't change it
     }
     
     if (allWeightsIndex < 0 || allWeightsIndex >= TICK_POSITIONS.length) return;
@@ -206,8 +199,13 @@ export const FontWeightSelector: React.FC<FontWeightSelectorProps> = ({
     if (!isWeightAvailable(newSuffix)) {
       return;
     }
-    const newFontName = buildFontName(fontName, newSuffix);
-    onChange(newFontName);
+    // IMPORTANT: Don't modify the font name - use it as-is
+    // Weight will be applied via CSS font-weight, not by modifying the font name
+    // Parse font name to get base name (in case it already includes a weight suffix)
+    const parsed = parseFontName(fontName);
+    const baseName = parsed?.baseName || fontName;
+    // Pass base name and weight separately - don't add weight suffix to font name
+    onChange(baseName, newSuffix);
   }, [fontName, onChange, isDisabled, isWeightAvailable]);
 
   // Handle mouse down
@@ -333,7 +331,7 @@ export const FontWeightSelector: React.FC<FontWeightSelectorProps> = ({
           {/* Handle - absolutely positioned to align with tracker */}
           <div
             ref={handleRef}
-            className={`slider-handle ${isDragging ? 'dragging' : ''} ${isDisabled ? 'disabled' : ''}`}
+            className={`slider-handle ${isDragging ? 'dragging' : ''} ${isDisabled || !isWeightAvailable(fontWeight) ? 'disabled' : ''}`}
             style={{ left: handleLeftPosition }}
             onMouseDown={handleMouseDown}
           >

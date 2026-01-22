@@ -19,7 +19,8 @@ const SYMBOLS = '!@#$%^&*()_+-=[]{}|;:,.<>?';
 const LIGATURES = 'fi fl ff ffi ffl';
 
 export const TypeTester: React.FC<TypeTesterProps> = ({ state }) => {
-  const fullFontName = buildFontName(state.fontName, state.fontWeight);
+  // Use font name as-is - don't add weight suffixes
+  const fullFontName = state.fontName;
   
   // Debug log
   if (fullFontName) {
@@ -52,8 +53,25 @@ export const TypeTester: React.FC<TypeTesterProps> = ({ state }) => {
   
   const textTransform = state.textTransform !== 'none' ? state.textTransform : undefined;
   
+  // Get numeric font-weight value from weight suffix
+  const getFontWeightValue = (suffix: string): number => {
+    const weightMap: Record<string, number> = {
+      'thin': 100, 'hairline': 100,
+      'extralight': 200, 'ultra-light': 200,
+      'light': 300,
+      'regular': 400, 'normal': 400,
+      'medium': 500,
+      'semibold': 600, 'demi-bold': 600,
+      'bold': 700,
+      'extrabold': 800, 'ultra-bold': 800,
+      'black': 900, 'heavy': 900,
+    };
+    return weightMap[suffix.toLowerCase()] || 400;
+  };
+
   const fontStyle: React.CSSProperties = {
-    fontFamily: fullFontName ? `"${fullFontName}", sans-serif` : 'inherit',
+    fontFamily: fullFontName ? `"${fullFontName}"` : 'inherit',
+    fontWeight: getFontWeightValue(state.fontWeight),
     fontFeatureSettings: fontFeatureSettings,
     textTransform: textTransform,
   };

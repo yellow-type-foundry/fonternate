@@ -75,11 +75,19 @@ export function buildFontName(
   baseName: string,
   weightSuffix: string | null
 ): string {
-  if (!weightSuffix) {
-    return baseName.trim();
+  const trimmedBase = baseName.trim();
+  
+  // If no base name, return empty string (don't build "-weight")
+  if (!trimmedBase) {
+    return '';
   }
+  
+  if (!weightSuffix) {
+    return trimmedBase;
+  }
+  
   // Use hyphen separator (more common in font names)
-  return `${baseName.trim()}-${weightSuffix}`;
+  return `${trimmedBase}-${weightSuffix}`;
 }
 
 /**
