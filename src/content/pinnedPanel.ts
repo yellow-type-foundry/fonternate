@@ -9,7 +9,7 @@ const STORAGE_COLLAPSED = 'fonternatePinnedCollapsed';
 
 const POPUP_URL = () => `${chrome.runtime.getURL('popup.html')}#embed`;
 const PINNED_PANEL_WIDTH = 300;
-const PINNED_IFRAME_MAX_HEIGHT = 420;
+const PINNED_IFRAME_MAX_HEIGHT = 640;
 const PINNED_IFRAME_MIN_HEIGHT = 120;
 
 let escapeHandler: ((e: KeyboardEvent) => void) | null = null;
@@ -65,7 +65,7 @@ function wirePinnedPanelAutoResize(iframe: HTMLIFrameElement): () => void {
         html?.scrollHeight ?? 0,
         html?.offsetHeight ?? 0
       );
-      const viewportCap = Math.max(120, window.innerHeight - 24);
+      const viewportCap = Math.max(120, window.innerHeight - 12);
       const maxHeight = Math.min(PINNED_IFRAME_MAX_HEIGHT, viewportCap);
       const nextHeight = Math.min(maxHeight, Math.max(PINNED_IFRAME_MIN_HEIGHT, contentHeight + 2));
       iframe.style.height = `${Math.round(nextHeight)}px`;
@@ -182,6 +182,9 @@ function injectPinnedPanel(startCollapsed: boolean): void {
       flex-direction: column;
       box-sizing: border-box;
       border-radius: 12px;
+      border: 0.5px solid #e9e4e2;
+      outline: 0.5px solid #e9e4e2;
+      outline-offset: 0;
       overflow: hidden;
       box-shadow: 0 8px 32px rgba(0,0,0,0.18);
       background: rgba(255, 255, 255, 0.9);
