@@ -84,7 +84,7 @@ export const StylisticSetsToggleGroup: React.FC<StylisticSetsToggleGroupProps> =
 
   return (
     <div className="stylistic-sets-container">
-      <div className="opentype-label-header">Stylistic sets</div>
+      <div className="opentype-feature-label">Stylistic sets</div>
       <div className="stylistic-sets-controls">
         {isEnabled && (
           <div className="stylistic-sets-dropdown-wrapper" ref={dropdownRef}>

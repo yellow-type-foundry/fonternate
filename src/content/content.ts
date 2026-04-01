@@ -1,6 +1,7 @@
 import { FontSettings, ChromeMessage, AppState } from '../types';
 import { getFontSettings, getAppState } from '../utils/chrome';
 import { getInstalledFonts, InstalledFont } from '../utils/fontDetection';
+import { initPinnedPanelFromStorage, togglePinnedPanel } from './pinnedPanel';
 
 class FontInjector {
   private settings: FontSettings | null = null;
@@ -92,8 +93,14 @@ class FontInjector {
         case 'DETECT_PAGE_FONTS':
           this.handleDetectPageFonts(sendResponse);
           return true; // Keep message channel open for async response
+        case 'TOGGLE_PINNED_PANEL':
+          togglePinnedPanel();
+          sendResponse({ success: true });
+          return true;
       }
     });
+
+    void initPinnedPanelFromStorage();
 
     // Apply fonts on page load/refresh if font is set
     // Wait a bit more to ensure document.head exists

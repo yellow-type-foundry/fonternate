@@ -38,9 +38,16 @@ const Panel: React.FC = () => {
   const [state, setState] = useState<AppState>(defaultAppState);
   const [availableWeightSuffixes, setAvailableWeightSuffixes] = useState<Set<string> | undefined>(undefined);
   const [openTypeFeaturesExpanded, setOpenTypeFeaturesExpanded] = useState(false);
+  const isPinnedIframe = typeof window !== 'undefined' && window.self !== window.top;
 
   useEffect(() => {
     initializePanel();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash === '#embed') {
+      document.body.classList.add('fonternate-embed');
+    }
   }, []);
 
   const initializePanel = async () => {
@@ -574,6 +581,16 @@ const Panel: React.FC = () => {
     }
   };
 
+  const handlePinToPage = useCallback(async () => {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab?.id) return;
+      await chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_PINNED_PANEL' });
+    } catch (e) {
+      console.warn('[Fonternate] Pin to page failed (use a normal webpage tab):', e);
+    }
+  }, []);
+
   const detectPageFont = useCallback(async () => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
@@ -810,6 +827,13 @@ const Panel: React.FC = () => {
           @lamg.bao
         </a>
       </div>
+      {!isPinnedIframe && isExtensionContext() && (
+        <div className="footer-pin-wrap">
+          <button type="button" className="pin-to-page-button" onClick={handlePinToPage}>
+            Pin to page
+          </button>
+        </div>
+      )}
     </div>
   );
 

@@ -152,9 +152,12 @@ export const TrackingSlider: React.FC<TrackingSliderProps> = ({
   
   return (
     <div className="font-weight-slider-container">
-      {/* Tracking Label */}
-      <div className="opentype-label-header">
-        Tracking: {value >= 0 ? '+' : ''}{value.toFixed(2)}em
+      <div className="opentype-slider-label-row">
+        <span className="opentype-slider-feature-label">Tracking</span>
+        <span className="opentype-slider-value">
+          {value >= 0 ? '+' : ''}
+          {value.toFixed(2)}em
+        </span>
       </div>
       
       {/* Slider Track Container */}

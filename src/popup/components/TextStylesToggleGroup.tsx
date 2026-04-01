@@ -82,7 +82,7 @@ export const TextStylesToggleGroup: React.FC<TextStylesToggleGroupProps> = ({
 
   return (
     <div className="stylistic-sets-container">
-      <div className="opentype-label-header">Specific styles</div>
+      <div className="opentype-feature-label">Specific styles</div>
       <div className="stylistic-sets-controls">
         {isEnabled && (
           <div className="stylistic-sets-dropdown-wrapper" ref={dropdownRef}>

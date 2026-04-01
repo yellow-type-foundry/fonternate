@@ -152,9 +152,9 @@ export const LeadingSlider: React.FC<LeadingSliderProps> = ({
   
   return (
     <div className="font-weight-slider-container">
-      {/* Leading Label */}
-      <div className="opentype-label-header">
-        Leading: {value.toFixed(2)}
+      <div className="opentype-slider-label-row">
+        <span className="opentype-slider-feature-label">Leading</span>
+        <span className="opentype-slider-value">{value.toFixed(2)}</span>
       </div>
       
       {/* Slider Track Container */}

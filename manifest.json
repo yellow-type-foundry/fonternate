@@ -55,6 +55,8 @@
   "web_accessible_resources": [
     {
       "resources": [
+        "popup.html",
+        "popup.js",
         "assets/*.svg",
         "*.svg"
       ],

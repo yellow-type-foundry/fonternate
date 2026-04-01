@@ -83,7 +83,8 @@ export type MessageType =
   | 'REVERT_TO_PREVIOUS_FONT'
   | 'RESET_ALL'
   | 'DETECT_PAGE_FONTS'
-  | 'GET_SYSTEM_FONTS';
+  | 'GET_SYSTEM_FONTS'
+  | 'TOGGLE_PINNED_PANEL';
 
 export interface ChromeMessage {
   type: MessageType;

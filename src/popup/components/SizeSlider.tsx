@@ -152,9 +152,9 @@ export const SizeSlider: React.FC<SizeSliderProps> = ({
   
   return (
     <div className="font-weight-slider-container">
-      {/* Size Label */}
-      <div className="opentype-label-header">
-        Size: {value}px
+      <div className="opentype-slider-label-row">
+        <span className="opentype-slider-feature-label">Size</span>
+        <span className="opentype-slider-value">{value}px</span>
       </div>
       
       {/* Slider Track Container */}
