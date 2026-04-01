@@ -1,12 +1,15 @@
 import { FontSettings, ChromeMessage, AppState } from '../types';
 import { getFontSettings, getAppState } from '../utils/chrome';
+import { getInstalledFonts, InstalledFont } from '../utils/fontDetection';
 
 class FontInjector {
   private settings: FontSettings | null = null;
   private appState: AppState | null = null;
   private styleElement: HTMLStyleElement | null = null;
+  private installedFontsCache: Array<{ family: string; fullName: string }> = [];
 
   constructor() {
+    console.log('[Fonternate] Content script initialized');
     this.initialize();
   }
 
@@ -23,6 +26,22 @@ class FontInjector {
     };
 
     await waitForDOM();
+    
+    // Safari-specific: Ensure document.head exists and is accessible
+    // Sometimes Safari needs a small delay even after DOMContentLoaded
+    if (!document.head) {
+      console.warn('[Fonternate] document.head not available, waiting...');
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    // Verify we can access document.head
+    if (!document.head) {
+      console.error('[Fonternate] ❌ CRITICAL: document.head is not available!');
+      console.error('[Fonternate] This will prevent CSS injection from working.');
+      return;
+    }
+    
+    console.log('[Fonternate] ✅ document.head is available:', document.head);
 
     // Load initial settings
     this.settings = await getFontSettings();
@@ -30,6 +49,8 @@ class FontInjector {
     
     // Listen for messages from background script
     chrome.runtime.onMessage.addListener((message: ChromeMessage, sender, sendResponse) => {
+      console.log('[Fonternate] Received message:', message.type, message.payload);
+      
       switch (message.type) {
         case 'UPDATE_FONT_SETTINGS':
         case 'TOGGLE_EXTENSION':
@@ -41,6 +62,7 @@ class FontInjector {
           break;
         case 'APPLY_FONT':
           try {
+            console.log('[Fonternate] APPLY_FONT message received, payload:', message.payload);
             this.handleApplyFont(message.payload);
             sendResponse({ success: true });
           } catch (error) {
@@ -66,6 +88,9 @@ class FontInjector {
           return true; // Keep message channel open for async response
         case 'CHECK_FONT_WEIGHTS':
           this.handleCheckFontWeights(message.payload, sendResponse);
+          return true; // Keep message channel open for async response
+        case 'DETECT_PAGE_FONTS':
+          this.handleDetectPageFonts(sendResponse);
           return true; // Keep message channel open for async response
       }
     });
@@ -209,9 +234,54 @@ class FontInjector {
     this.removeFontStyle();
   }
 
-  private handleApplyFont(payload: {
+  private async resolveExactFontName(userInput: string): Promise<string> {
+    // Try to match user input to exact system font name
+    // Note: Native messaging doesn't work in content scripts, so we use cached fonts
+    // or fallback to user input if cache is empty
+    try {
+      // Use cached fonts if available (from previous lookups)
+      let installedFonts = this.installedFontsCache;
+      
+      // If cache is empty, try to get fonts (but this will likely fail in content script)
+      if (installedFonts.length === 0) {
+        try {
+          installedFonts = await getInstalledFonts();
+          this.installedFontsCache = installedFonts;
+        } catch (error) {
+          // Native messaging not available in content script - this is expected
+          // The popup should have already resolved the font name before sending it
+          console.log('[Fonternate] Cannot resolve font name in content script (native messaging not available)');
+          console.log('[Fonternate] Using font name as-is - popup should have resolved it:', userInput);
+          return userInput.trim();
+        }
+      }
+      
+      const lowerInput = userInput.trim().toLowerCase();
+      
+      // Look for exact match (case-insensitive)
+      const exactMatch = installedFonts.find(font => 
+        font.family.toLowerCase() === lowerInput ||
+        font.fullName.toLowerCase() === lowerInput
+      );
+      
+      if (exactMatch) {
+        console.log('[Fonternate] Resolved font name:', userInput, '->', exactMatch.family);
+        return exactMatch.family;
+      }
+      
+      // If no exact match, return user input as-is
+      // The popup should have already resolved it, so this should be the exact name
+      return userInput.trim();
+    } catch (error) {
+      console.warn('[Fonternate] Failed to resolve font name, using input as-is:', error);
+      return userInput.trim();
+    }
+  }
+
+  private async handleApplyFont(payload: {
     fontName: string;
     fontWeight?: number | string;  // CSS font-weight value (e.g., 400, 700, "bold")
+    fontStyle?: 'normal' | 'italic';
     textTransform: string;
     stylisticSets: number[];
     swashLevel: number;
@@ -228,7 +298,23 @@ class FontInjector {
       return;
     }
 
-    console.log('[Fonternate] Applying font:', payload.fontName, 'with weight:', payload.fontWeight);
+    // The popup already resolves font names to exact system names before sending
+    // Native messaging doesn't work in content scripts, so we trust the popup's resolution
+    // If resolution is needed, it should happen in the popup, not here
+    const exactFontName = payload.fontName.trim();
+    console.log('[Fonternate] Applying font:', exactFontName, 'with weight:', payload.fontWeight);
+    
+    // Safari-specific: Verify font exists before applying
+    // This helps catch cases where font name doesn't match system
+    const testText = 'Ag';
+    const fontSize = '72px';
+    const fontExists = this.checkFontExists(exactFontName, testText, fontSize);
+    console.log('[Fonternate] Font verification:', fontExists ? '✅ Font exists' : '❌ Font not found');
+    
+    if (!fontExists) {
+      console.warn('[Fonternate] ⚠️ WARNING: Font "' + exactFontName + '" not verified as available!');
+      console.warn('[Fonternate] Font may not render correctly. Check native messaging logs for exact font name.');
+    }
 
     // Ensure document.head exists
     if (!document.head) {
@@ -322,38 +408,124 @@ class FontInjector {
       return Array.from(variants.values());
     };
     
-    const familyStack = buildFontFamilyStack(payload.fontName);
-    const familyCss = familyStack.map(name => `"${name}"`).join(', ');
+    // CRITICAL: Use the resolved exact font name (already resolved above)
+    // This ensures the browser uses the actual installed font, not a synthesized version
     
-    let css = `${selector} { font-family: ${familyCss} !important;`;
+    // Build variations as fallbacks only (use resolved name)
+    const familyStack = buildFontFamilyStack(exactFontName);
     
-    // Add font-weight if provided (use CSS font-weight, not font name suffix)
+    // Build final stack: EXACT name first, then variations
+    const finalStack: string[] = [];
+    
+    // 1. Add the EXACT font name first (this is the most important!)
+    if (exactFontName) {
+      finalStack.push(exactFontName);
+    }
+    
+    // 2. For system fonts, add known actual system font names if they exist
+    // This handles cases like "SF Pro" -> "SF Pro Text" / "SF Pro Display"
+    const lowerInput = exactFontName.toLowerCase();
+    if (lowerInput.includes('sf pro') || lowerInput === 'sfpro') {
+      // SF Pro fonts on macOS are actually "SF Pro Text" and "SF Pro Display"
+      if (!finalStack.includes('SF Pro Text')) finalStack.push('SF Pro Text');
+      if (!finalStack.includes('SF Pro Display')) finalStack.push('SF Pro Display');
+    }
+    if (lowerInput.includes('sf mono') || lowerInput === 'sfmono') {
+      if (!finalStack.includes('SF Mono')) finalStack.push('SF Mono');
+    }
+    
+    // 3. Add variations from buildFontFamilyStack as fallbacks (excluding exact name)
+    for (const variant of familyStack) {
+      const variantLower = variant.toLowerCase();
+      const exactLower = exactFontName.toLowerCase();
+      
+      // Skip if it's the exact same as the input (already added first)
+      if (variantLower === exactLower) continue;
+      
+      // Skip if already in stack
+      if (finalStack.some(f => f.toLowerCase() === variantLower)) continue;
+      
+      // Add variation as fallback
+      finalStack.push(variant);
+    }
+    
+    const familyCss = finalStack.map(name => `"${name}"`).join(', ');
+    
+    console.log('[Fonternate] Input font name (EXACT):', exactFontName);
+    console.log('[Fonternate] Final font stack (exact name first):', finalStack);
+    console.log('[Fonternate] Final CSS font-family:', familyCss);
+    
+    // IMPORTANT: Log a warning if the font name contains spaces or special characters
+    // Some fonts might need to be referenced differently
+    if (exactFontName.includes(' ') || exactFontName.includes('-')) {
+      console.log('[Fonternate] Font name contains spaces/hyphens - ensure exact match from system');
+    }
+    
+    // Safari Web Extensions: Use maximum specificity and multiple selectors
+    // Safari treats injected styles as user styles, so we need aggressive specificity
+    // Use both html * and body * to ensure maximum coverage
+    let cssSelectors: string[];
+    if (selector === '*') {
+      // For universal, use multiple high-specificity selectors
+      cssSelectors = [
+        'html *',
+        'body *',
+        'html body *',
+        '*'
+      ];
+    } else {
+      // For specific selectors, add html and body prefixes
+      const baseSelectors = selector.split(',').map(s => s.trim());
+      cssSelectors = [
+        ...baseSelectors.map(s => `html ${s}`),
+        ...baseSelectors.map(s => `body ${s}`),
+        ...baseSelectors.map(s => `html body ${s}`),
+        ...baseSelectors
+      ];
+    }
+    
+    // Build all CSS properties first
     const fontWeightValue = (() => {
       if (payload.fontWeight === undefined) return 400;
       if (typeof payload.fontWeight === 'number') return payload.fontWeight;
       return this.getFontWeightValue(payload.fontWeight);
     })();
-    css += ` font-weight: ${fontWeightValue} !important;`;
     console.log('[Fonternate] Applied font-weight:', fontWeightValue);
+
+    const italicOn =
+      payload.fontStyle === 'italic' ||
+      (typeof payload.fontStyle === 'string' && payload.fontStyle.toLowerCase().trim() === 'italic');
+    console.log('[Fonternate] fontStyle payload:', payload.fontStyle, '→', italicOn ? 'italic' : 'normal');
+    
+    // Collect all CSS properties
+    const cssProperties: string[] = [
+      `font-family: ${familyCss} !important`,
+      `font-weight: ${fontWeightValue} !important`,
+      `font-style: ${italicOn ? 'italic' : 'normal'} !important`,
+    ];
+    // Sites often set font-synthesis: none, which blocks faux italic; re-enable when italic is requested
+    if (italicOn) {
+      cssProperties.push(`font-synthesis: weight style !important`);
+    }
     
     // Add tracking (letter-spacing) if textStyles are selected
     if (payload.textStyles && payload.textStyles.length > 0 && payload.tracking !== undefined) {
-      css += ` letter-spacing: ${payload.tracking}em !important;`;
+      cssProperties.push(`letter-spacing: ${payload.tracking}em !important`);
     }
     
     // Add font-size if textStyles are selected
     if (payload.textStyles && payload.textStyles.length > 0 && payload.fontSize !== undefined) {
-      css += ` font-size: ${payload.fontSize}px !important;`;
+      cssProperties.push(`font-size: ${payload.fontSize}px !important`);
     }
     
     // Add leading (line-height) if textStyles are selected
     if (payload.textStyles && payload.textStyles.length > 0 && payload.leading !== undefined) {
-      css += ` line-height: ${payload.leading} !important;`;
+      cssProperties.push(`line-height: ${payload.leading} !important`);
     }
     
     // Add text-transform if set
     if (payload.textTransform && payload.textTransform !== 'none') {
-      css += ` text-transform: ${payload.textTransform} !important;`;
+      cssProperties.push(`text-transform: ${payload.textTransform} !important`);
     }
     
     // Build font-feature-settings
@@ -386,33 +558,218 @@ class FontInjector {
     features.push(`"calt" ${payload.calt ? '1' : '0'}`);
     
     if (features.length > 0) {
-      css += ` font-feature-settings: ${features.join(', ')} !important;`;
+      cssProperties.push(`font-feature-settings: ${features.join(', ')} !important`);
     }
     
-    css += ' }';
+    // Create CSS rule for each selector with all properties
+    // Safari needs multiple high-specificity rules to override site styles
+    const css = cssSelectors.map(sel => 
+      `${sel} { ${cssProperties.join('; ')}; }`
+    ).join('\n');
     
-    console.log('[Fonternate] Generated CSS font-family stack:', familyCss);
+    console.log('[Fonternate] Generated CSS:', css);
+    console.log('[Fonternate] Font-family stack:', familyCss);
+    console.log('[Fonternate] Selector:', selector);
+    
+    // Safari-specific: Try to load/verify font before applying
+    // This ensures Safari actually has the font available
+    if (document.fonts && document.fonts.load) {
+      try {
+        const fontSpec = `16px "${exactFontName}"`;
+        console.log('[Fonternate] Attempting to load font:', fontSpec);
+        await document.fonts.load(fontSpec);
+        const isLoaded = document.fonts.check(fontSpec);
+        console.log('[Fonternate] Font load result:', isLoaded ? '✅ Loaded' : '❌ Not loaded');
+        
+        // Also try with font-weight
+        const fontSpecWithWeight = `${fontWeightValue} 16px "${exactFontName}"`;
+        await document.fonts.load(fontSpecWithWeight);
+        const isLoadedWithWeight = document.fonts.check(fontSpecWithWeight);
+        console.log('[Fonternate] Font with weight load result:', isLoadedWithWeight ? '✅ Loaded' : '❌ Not loaded');
+
+        if (italicOn) {
+          const fontSpecItalic = `italic ${fontWeightValue} 16px "${exactFontName}"`;
+          await document.fonts.load(fontSpecItalic);
+          const italicLoaded = document.fonts.check(fontSpecItalic);
+          console.log('[Fonternate] Italic face load:', italicLoaded ? '✅ Loaded' : '❌ Not loaded');
+        }
+      } catch (error) {
+        console.warn('[Fonternate] Font loading failed (may not be available):', error);
+      }
+    }
+    
     this.styleElement.textContent = css;
-    document.head.appendChild(this.styleElement);
     
-    // Verify style was injected and check computed font
+    // Ensure document.head exists
+    if (!document.head) {
+      console.error('[Fonternate] document.head does not exist! Retrying...');
+      setTimeout(() => this.handleApplyFont(payload), 10);
+      return;
+    }
+    
+    // Remove any existing style element first
+    const existingStyle = document.getElementById('font-override-style');
+    if (existingStyle) {
+      existingStyle.remove();
+      console.log('[Fonternate] Removed existing style element');
+    }
+    
+    // Safari-specific: Use insertBefore to ensure style is at the beginning of head
+    // This can help with CSS specificity in Safari
+    const firstChild = document.head.firstChild;
+    if (firstChild) {
+      document.head.insertBefore(this.styleElement, firstChild);
+      console.log('[Fonternate] ✅ Style element inserted at beginning of document.head (Safari optimization)');
+    } else {
+      document.head.appendChild(this.styleElement);
+      console.log('[Fonternate] ✅ Style element appended to document.head');
+    }
+    
+    // Force immediate reflow to ensure Safari applies styles
+    void document.documentElement.offsetHeight;
+    void document.body?.offsetHeight;
+    
+    // Verify style was injected immediately
     const injectedStyle = document.getElementById('font-override-style');
     if (!injectedStyle) {
-      console.error('[Fonternate] Failed to inject style element');
+      console.error('[Fonternate] ❌ CRITICAL: Failed to inject style element - element not found after appendChild');
+      console.error('[Fonternate] document.head exists:', !!document.head);
+      console.error('[Fonternate] document.head children:', document.head?.children.length || 0);
+      console.error('[Fonternate] This is a critical error - CSS will not be applied!');
     } else {
+      console.log('[Fonternate] ✅ Style element verified in DOM');
+      console.log('[Fonternate] Style element content length:', injectedStyle.textContent?.length || 0);
+      console.log('[Fonternate] Style element position in head:', Array.from(document.head.children).indexOf(injectedStyle));
+      
+      // Safari-specific: Log the actual CSS content for debugging
+      const cssContent = injectedStyle.textContent || '';
+      console.log('[Fonternate] Actual CSS in DOM (first 200 chars):', cssContent.substring(0, 200));
+      
+      // Force a reflow to ensure styles are applied
+      void document.body?.offsetHeight;
+      
       // Check what font is actually being used after a brief delay
+      // Use the same selector as the CSS to test on the right elements
       setTimeout(() => {
         if (document.body) {
-          const testEl = document.createElement('span');
-          testEl.style.position = 'absolute';
-          testEl.style.visibility = 'hidden';
-          testEl.textContent = 'Ag';
-          document.body.appendChild(testEl);
+          // Use the actual selector from the CSS (e.g., "h1" or "*")
+          const testSelector = selector;
+          let testEl: HTMLElement | null = null;
+          
+          // Try to find an existing element matching the selector
+          if (testSelector !== '*') {
+            const existingElements = document.querySelectorAll(testSelector);
+            if (existingElements.length > 0) {
+              testEl = existingElements[0] as HTMLElement;
+            }
+          }
+          
+          // If no existing element, create one with the right tag
+          if (!testEl) {
+            const tagName = testSelector === '*' ? 'span' : testSelector.split(',')[0].trim();
+            testEl = document.createElement(tagName);
+            testEl.style.position = 'absolute';
+            testEl.style.visibility = 'hidden';
+            testEl.textContent = 'Ag';
+            document.body.appendChild(testEl);
+          }
+          
+          // Force reflow
+          void testEl.offsetWidth;
+          
           const computed = window.getComputedStyle(testEl).fontFamily;
           console.log('[Fonternate] Computed font-family after application:', computed);
-          document.body.removeChild(testEl);
+          console.log('[Fonternate] Expected font:', payload.fontName);
+          console.log('[Fonternate] CSS selector used:', selector);
+          
+          // Check if font is actually being used (not synthesized)
+          const computedLower = computed.toLowerCase();
+          const expectedLower = payload.fontName.toLowerCase();
+          
+          // Check for exact match or variations
+          const expectedVariants = [
+            expectedLower,
+            expectedLower.replace(/\s+/g, ''),
+            expectedLower.replace(/\s+/g, '-'),
+            expectedLower.replace(/\s+/g, '_'),
+          ];
+          
+          // For SF Pro, also check for system font names
+          if (expectedLower.includes('sf pro') || expectedLower === 'sfpro') {
+            expectedVariants.push('sf pro text', 'sf pro display', 'sfpro text', 'sfpro display');
+          }
+          
+          const fontMatch = expectedVariants.some(variant => computedLower.includes(variant)) ? '✅ YES' : '❌ NO';
+          console.log('[Fonternate] Font match:', fontMatch);
+          
+          // Check if font is synthesized by comparing dimensions with fallback
+          const fallbackEl = document.createElement(testEl.tagName);
+          fallbackEl.style.position = 'absolute';
+          fallbackEl.style.visibility = 'hidden';
+          fallbackEl.style.fontSize = '72px';
+          fallbackEl.style.whiteSpace = 'nowrap';
+          fallbackEl.style.fontFamily = 'monospace';
+          fallbackEl.textContent = 'Ag';
+          document.body.appendChild(fallbackEl);
+          
+          testEl.style.fontSize = '72px';
+          testEl.style.whiteSpace = 'nowrap';
+          void testEl.offsetWidth;
+          void fallbackEl.offsetWidth;
+          
+          const testWidth = testEl.offsetWidth;
+          const testHeight = testEl.offsetHeight;
+          const fallbackWidth = fallbackEl.offsetWidth;
+          const fallbackHeight = fallbackEl.offsetHeight;
+          
+          const widthDiffers = Math.abs(testWidth - fallbackWidth) > 2;
+          const heightDiffers = Math.abs(testHeight - fallbackHeight) > 0.5;
+          const dimensionsDiffer = widthDiffers || heightDiffers;
+          
+          const isActuallyUsed = dimensionsDiffer;
+          const isSynthesized = !dimensionsDiffer && fontMatch === '❌ NO';
+          
+          console.log('[Fonternate] Font rendering check:', {
+            testDimensions: `${testWidth}x${testHeight}`,
+            fallbackDimensions: `${fallbackWidth}x${fallbackHeight}`,
+            dimensionsDiffer,
+            isActuallyUsed: isActuallyUsed ? '✅ YES (font is rendering)' : '❌ NO (font not rendering - using fallback)',
+            isSynthesized: isSynthesized ? '⚠️ YES (likely synthesized)' : '✅ NO (real font)',
+            computedFont: computed,
+            expectedFont: payload.fontName,
+          });
+          
+          // If font isn't actually being used, log detailed diagnostics
+          if (!isActuallyUsed) {
+            console.error('[Fonternate] ❌ Font is NOT being used! Diagnostics:');
+            console.error('[Fonternate] 1. CSS injected:', css.substring(0, 100) + '...');
+            console.error('[Fonternate] 2. Computed font:', computed);
+            console.error('[Fonternate] 3. Expected font:', payload.fontName);
+            console.error('[Fonternate] 4. Dimensions match fallback:', !dimensionsDiffer, '- Font is falling back!');
+            console.error('[Fonternate] 5. Possible causes:');
+            console.error('[Fonternate]    - Font name mismatch (check exact system name)');
+            console.error('[Fonternate]    - Site styles overriding with higher specificity');
+            console.error('[Fonternate]    - Font not available in Safari context');
+            console.error('[Fonternate]    - Need to use PostScript name instead of family name');
+          }
+          
+          // If font didn't match, log a warning with suggestions
+          if (fontMatch === '❌ NO') {
+            console.warn('[Fonternate] ⚠️ Font name not in computed style! Possible issues:');
+            console.warn('[Fonternate] 1. Font name might be different in system. Check native messaging logs.');
+            console.warn('[Fonternate] 2. Font might need PostScript name instead of family name.');
+            console.warn('[Fonternate] 3. CSS selector might be too specific or overridden by site styles.');
+          }
+          
+          // Clean up only if we created the element
+          if (testEl.parentElement === document.body && testEl.tagName.toLowerCase() !== testSelector.split(',')[0].trim().toLowerCase()) {
+            document.body.removeChild(testEl);
+          }
+          document.body.removeChild(fallbackEl);
+        } else {
+          console.warn('[Fonternate] document.body not available for font verification');
         }
-      }, 100);
+      }, 200);
     }
   }
 
@@ -1112,6 +1469,121 @@ class FontInjector {
     this.removeFontStyle();
   }
 
+  private handleDetectPageFonts(sendResponse: (response: any) => void) {
+    try {
+      if (!document.body) {
+        sendResponse({ fonts: [], error: 'Document body not ready' });
+        return;
+      }
+
+      // Collect unique font families from all elements
+      const fontFamilies = new Set<string>();
+      const allElements = document.querySelectorAll('*');
+      
+      // Also check computed styles of common text elements
+      const textElements = document.querySelectorAll('p, h1, h2, h3, h4, h5, h6, span, div, a, li, td, th, label, button, input, textarea');
+      
+      // Combine both sets
+      const elementsToCheck = new Set([...Array.from(allElements), ...Array.from(textElements)]);
+      
+      elementsToCheck.forEach((element) => {
+        try {
+          const computedStyle = window.getComputedStyle(element);
+          const fontFamily = computedStyle.fontFamily;
+          
+          if (fontFamily) {
+            // Parse font-family string (can contain multiple fonts with fallbacks)
+            // Format: "Font Name", "Another Font", sans-serif
+            const fonts = fontFamily
+              .split(',')
+              .map(f => f.trim().replace(/^["']|["']$/g, '')) // Remove quotes
+              .filter(f => {
+                // Filter out generic font families
+                const lower = f.toLowerCase();
+                return !['serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', 'system-ui', '-apple-system', 'blinkmacsystemfont'].includes(lower) &&
+                       f.length > 0;
+              });
+            
+            fonts.forEach(font => {
+              if (font.trim()) {
+                fontFamilies.add(font.trim());
+              }
+            });
+          }
+        } catch (e) {
+          // Ignore errors for individual elements
+        }
+      });
+
+      // Also check @font-face declarations in stylesheets
+      try {
+        Array.from(document.styleSheets).forEach((sheet) => {
+          try {
+            if (sheet.cssRules) {
+              Array.from(sheet.cssRules).forEach((rule) => {
+                if (rule instanceof CSSFontFaceRule) {
+                  const fontFamily = rule.style.fontFamily;
+                  if (fontFamily) {
+                    const cleanFont = fontFamily.replace(/^["']|["']$/g, '').trim();
+                    if (cleanFont && cleanFont.length > 0) {
+                      fontFamilies.add(cleanFont);
+                    }
+                  }
+                }
+              });
+            }
+          } catch (e) {
+            // Cross-origin stylesheets may throw errors
+          }
+        });
+      } catch (e) {
+        // Ignore stylesheet errors
+      }
+
+      const fontsArray = Array.from(fontFamilies).sort();
+      
+      // Get the most common font (primary font used on the page)
+      const fontCounts = new Map<string, number>();
+      textElements.forEach((element) => {
+        try {
+          const computedStyle = window.getComputedStyle(element);
+          const fontFamily = computedStyle.fontFamily;
+          if (fontFamily) {
+            const primaryFont = fontFamily.split(',')[0].trim().replace(/^["']|["']$/g, '');
+            if (primaryFont && !['serif', 'sans-serif', 'monospace'].includes(primaryFont.toLowerCase())) {
+              fontCounts.set(primaryFont, (fontCounts.get(primaryFont) || 0) + 1);
+            }
+          }
+        } catch (e) {
+          // Ignore
+        }
+      });
+
+      // Find most common font
+      let primaryFont = '';
+      let maxCount = 0;
+      fontCounts.forEach((count, font) => {
+        if (count > maxCount) {
+          maxCount = count;
+          primaryFont = font;
+        }
+      });
+
+      sendResponse({
+        fonts: fontsArray,
+        primaryFont: primaryFont || (fontsArray.length > 0 ? fontsArray[0] : ''),
+        count: fontsArray.length
+      });
+    } catch (error) {
+      console.error('[Fonternate] Error detecting page fonts:', error);
+      sendResponse({
+        fonts: [],
+        primaryFont: '',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
   private applyFontFromAppState(appState: AppState) {
     if (!appState.fontName?.trim()) {
       this.removeFontStyle();
@@ -1120,6 +1592,8 @@ class FontInjector {
 
     this.handleApplyFont({
       fontName: appState.fontName,
+      fontWeight: this.getFontWeightValue(appState.fontWeight || 'regular'),
+      fontStyle: appState.fontStyle,
       textTransform: appState.textTransform,
       stylisticSets: Array.from(appState.stylisticSets),
       swashLevel: appState.swashLevel,

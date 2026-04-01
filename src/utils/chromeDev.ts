@@ -18,6 +18,7 @@ const defaultAppState: AppState = {
   fontName: '',
   fontWeight: 'regular',
   textTransform: 'none',
+  fontStyle: 'normal',
   stylisticSets: new Set<number>(),
   swashLevel: 0,
   liga: true,

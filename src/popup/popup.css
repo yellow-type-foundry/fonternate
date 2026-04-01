@@ -15,16 +15,14 @@
 /* Font input container */
 .font-input-container {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   width: 100%;
-  gap: 0;
+  gap: 4px;
+  margin-bottom: 0;
   background: #f9f6f5;
   border-radius: 8px;
   padding: 10px 14px;
   box-sizing: border-box;
-  margin-bottom: 0;
-  height: fit-content;
 }
 
 /* Font Weight Slider */
@@ -198,6 +196,7 @@
   letter-spacing: normal;
   transition: opacity 0.2s ease;
   text-align: center;
+  width: 100%;
 }
 
 .font-input:hover {
@@ -243,7 +242,7 @@
   text-transform: uppercase;
   cursor: pointer;
   white-space: nowrap;
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
   display: flex;
   align-items: center;
@@ -290,41 +289,6 @@
 /* Divider line */
 .divider-line {
   display: none; /* Hidden in new design */
-}
-
-/* Previous Font button */
-.previous-font-button {
-  background: #F2EBE9;
-  color: #6E493F;
-  border: none;
-  padding: 11.5px 23px;
-  font-family: 'Roboto Mono', monospace;
-  font-size: 14.375px;
-  font-weight: 500;
-  text-transform: uppercase;
-  cursor: pointer;
-  white-space: nowrap;
-  flex: 1;
-  min-width: 0;
-  height: 41px;
-  display: flex;
-  align-items: center;
-  gap: 0;
-  justify-content: center;
-  border-radius: 8px;
-  transition: background 0.2s ease;
-}
-
-.previous-font-button:hover:not(:disabled),
-.previous-font-button:active:not(:disabled) {
-  background: #E2D4CF;
-  color: #6E493F;
-}
-
-.previous-font-button:disabled {
-  opacity: 1;
-  color: #9E7E76;
-  cursor: not-allowed;
 }
 
 /* Reset button */
@@ -375,6 +339,53 @@
   padding: 0;
   margin: 0;
   width: 100%;
+}
+
+.feature-row-segmented-pair {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ~3 segments vs 1 segment — share full row width */
+.feature-row-segmented-pair .text-transform-section {
+  flex: 3 1 0;
+  min-width: 0;
+  width: auto;
+}
+
+.feature-row-segmented-pair .text-transform-section .segmented-control.text-transform-control {
+  width: 100% !important;
+  max-width: 100%;
+}
+
+.feature-row-segmented-pair .font-style-section {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
+}
+
+/* Single “Italic” control — matches segmented look, fills its column */
+.font-style-single {
+  display: flex;
+  width: 100%;
+  height: 32px;
+  box-sizing: border-box;
+  border: 0.75px solid #e9e4e2;
+  border-radius: 6px;
+  overflow: hidden;
+  background: transparent;
+}
+
+.font-style-single .segmented-control-btn {
+  width: 100%;
+  flex: 1;
+  border-right: none;
+  border-radius: 6px;
+  font-style: italic;
 }
 
 /* Gap spacer */

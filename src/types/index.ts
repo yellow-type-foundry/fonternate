@@ -1,5 +1,8 @@
 export type TextTransform = 'none' | 'lowercase' | 'uppercase';
 
+/** CSS font-style for the preview override */
+export type FontStyle = 'normal' | 'italic';
+
 export interface FontCapabilities {
   ss: number[];              // available ssXX numbers, e.g., [1,2,3,5]
   swashLevels: number[];     // allowed swash levels, e.g., [0,1,2]
@@ -12,6 +15,7 @@ export interface AppState {
   fontName: string;                 // Base font family name (e.g., "Monarch"), without weight suffix
   fontWeight: string;               // Weight suffix (e.g., "regular", "bold"), default "regular"
   textTransform: TextTransform;     // default "none"
+  fontStyle: FontStyle;             // default "normal"
   stylisticSets: Set<number>;       // 1..9; multi-select; default empty
   swashLevel: number;               // 0..9; default 0
   liga: boolean;                    // standard ligatures; default true
@@ -77,7 +81,9 @@ export type MessageType =
   | 'DETECT_CAPABILITIES'
   | 'APPLY_FONT'
   | 'REVERT_TO_PREVIOUS_FONT'
-  | 'RESET_ALL';
+  | 'RESET_ALL'
+  | 'DETECT_PAGE_FONTS'
+  | 'GET_SYSTEM_FONTS';
 
 export interface ChromeMessage {
   type: MessageType;

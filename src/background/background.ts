@@ -217,6 +217,36 @@ chrome.runtime.onMessage.addListener((message: ChromeMessage, sender, sendRespon
       }
       return true;
       
+    case 'DETECT_PAGE_FONTS':
+      // Forward font detection request to content script
+      const detectFontTabId = message.tabId || sender.tab?.id;
+      if (detectFontTabId) {
+        chrome.tabs.sendMessage(detectFontTabId, {
+          type: 'DETECT_PAGE_FONTS'
+        }, (response) => {
+          sendResponse(response || { fonts: [], primaryFont: '' });
+        });
+      } else {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs[0]?.id) {
+            chrome.tabs.sendMessage(tabs[0].id, {
+              type: 'DETECT_PAGE_FONTS'
+            }, (response) => {
+              sendResponse(response || { fonts: [], primaryFont: '' });
+            });
+          } else {
+            sendResponse({ fonts: [], primaryFont: '', error: 'No active tab' });
+          }
+        });
+      }
+      return true;
+      
+    case 'GET_SYSTEM_FONTS':
+      // Get system fonts via native messaging (Safari) or Font Access API
+      // This is handled in the popup/utils, but we can forward if needed
+      sendResponse({ fonts: [], error: 'Use getInstalledFonts() in popup' });
+      return true;
+      
     default:
       sendResponse({ error: 'Unknown message type' });
   }

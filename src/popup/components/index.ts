@@ -1,6 +1,7 @@
 export { FontNameInput } from './FontNameInput';
 export { FontWeightSelector } from './FontWeightSelector';
 export { TextTransformSegmented } from './TextTransformSegmented';
+export { FontStyleSegmented } from './FontStyleSegmented';
 export { StylisticSetsToggleGroup } from './StylisticSetsToggleGroup';
 export { SwashLevelSegmented } from './SwashLevelSegmented';
 export { LigatureToggles } from './LigatureToggles';

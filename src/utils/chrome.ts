@@ -47,6 +47,7 @@ export const defaultAppState: AppState = {
   fontName: '',
   fontWeight: 'regular',
   textTransform: 'none',
+  fontStyle: 'normal',
   stylisticSets: new Set<number>(),
   swashLevel: 0,
   liga: true,
@@ -156,6 +157,9 @@ export const getAppState = async (): Promise<AppState> => {
         }
         if (Array.isArray(state.textStyles)) {
           state.textStyles = new Set(state.textStyles);
+        }
+        if (!state.fontStyle || (state.fontStyle !== 'normal' && state.fontStyle !== 'italic')) {
+          state.fontStyle = 'normal';
         }
         // Handle backward compatibility: if fontWeight is missing, parse fontName or default to 'regular'
         if (!state.fontWeight) {

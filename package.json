@@ -5,12 +5,16 @@
   "main": "index.js",
   "scripts": {
     "build": "node increment-version.js && tsc && webpack --mode production && cp manifest.json popup.html dist/ && cp icon*.png dist/ && cp src/popup/*.svg dist/ 2>/dev/null || true && cp -r src/popup/assets dist/ 2>/dev/null || true",
+    "build:safari": "node increment-version.js && tsc && webpack --config webpack.safari.js && node build-safari-copy.js",
     "watch": "node watch-build.js",
     "dev": "webpack --mode development --watch",
     "dev:ui": "webpack serve --config webpack.dev.js",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist",
-    "rebuild": "npm run clean && npm run build"
+    "clean:safari": "rm -rf SafariExtension/Resources/dist",
+    "rebuild": "npm run clean && npm run build",
+    "rebuild:safari": "npm run clean:safari && npm run build:safari",
+    "icons:safari": "node generate-safari-icons.js"
   },
   "keywords": ["chrome-extension", "fonts", "typography", "testing"],
   "author": "",

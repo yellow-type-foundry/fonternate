@@ -69,9 +69,10 @@ export const TypeTester: React.FC<TypeTesterProps> = ({ state }) => {
     return weightMap[suffix.toLowerCase()] || 400;
   };
 
-  const fontStyle: React.CSSProperties = {
+  const previewTextStyle: React.CSSProperties = {
     fontFamily: fullFontName ? `"${fullFontName}"` : 'inherit',
     fontWeight: getFontWeightValue(state.fontWeight),
+    fontStyle: state.fontStyle === 'italic' ? 'italic' : 'normal',
     fontFeatureSettings: fontFeatureSettings,
     textTransform: textTransform,
   };
@@ -82,7 +83,7 @@ export const TypeTester: React.FC<TypeTesterProps> = ({ state }) => {
       <div className="type-tester-content">
         <div className="type-tester-section">
           <div className="type-tester-label">Pangrams</div>
-          <div className="type-tester-text" style={fontStyle}>
+          <div className="type-tester-text" style={previewTextStyle}>
             {PANGRAMS.map((pangram, index) => (
               <div key={index} className="type-tester-line">
                 {pangram}
@@ -93,7 +94,7 @@ export const TypeTester: React.FC<TypeTesterProps> = ({ state }) => {
         
         <div className="type-tester-section">
           <div className="type-tester-label">Numbers & Symbols</div>
-          <div className="type-tester-text" style={fontStyle}>
+          <div className="type-tester-text" style={previewTextStyle}>
             <div className="type-tester-line">{NUMBERS}</div>
             <div className="type-tester-line">{SYMBOLS}</div>
           </div>
@@ -101,7 +102,7 @@ export const TypeTester: React.FC<TypeTesterProps> = ({ state }) => {
         
         <div className="type-tester-section">
           <div className="type-tester-label">Ligatures</div>
-          <div className="type-tester-text" style={fontStyle}>
+          <div className="type-tester-text" style={previewTextStyle}>
             <div className="type-tester-line">{LIGATURES}</div>
           </div>
         </div>

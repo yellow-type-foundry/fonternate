@@ -65,9 +65,10 @@ export const DevLayout: React.FC<DevLayoutProps> = ({ children, state }) => {
   
   const textTransform = state.textTransform !== 'none' ? state.textTransform : undefined;
   
-  const fontStyle: React.CSSProperties = {
+  const previewTextStyle: React.CSSProperties = {
     fontFamily: fullFontName ? `"${fullFontName}"` : 'inherit',
     fontWeight: getFontWeightValue(state.fontWeight),
+    fontStyle: state.fontStyle === 'italic' ? 'italic' : 'normal',
     fontFeatureSettings: fontFeatureSettings,
     textTransform: textTransform,
   };
@@ -82,7 +83,7 @@ export const DevLayout: React.FC<DevLayoutProps> = ({ children, state }) => {
         <div className="dev-preview-content">
           <div className="dev-preview-section">
             <div className="dev-preview-label">Pangrams</div>
-            <div className="dev-preview-text" style={fontStyle}>
+            <div className="dev-preview-text" style={previewTextStyle}>
               {PANGRAMS.map((pangram, index) => (
                 <div key={index} className="dev-preview-line">
                   {pangram}
@@ -93,7 +94,7 @@ export const DevLayout: React.FC<DevLayoutProps> = ({ children, state }) => {
           
           <div className="dev-preview-section">
             <div className="dev-preview-label">Numbers & Symbols</div>
-            <div className="dev-preview-text" style={fontStyle}>
+            <div className="dev-preview-text" style={previewTextStyle}>
               <div className="dev-preview-line">{NUMBERS}</div>
               <div className="dev-preview-line">{SYMBOLS}</div>
             </div>
@@ -101,7 +102,7 @@ export const DevLayout: React.FC<DevLayoutProps> = ({ children, state }) => {
           
           <div className="dev-preview-section">
             <div className="dev-preview-label">Ligatures</div>
-            <div className="dev-preview-text" style={fontStyle}>
+            <div className="dev-preview-text" style={previewTextStyle}>
               <div className="dev-preview-line">{LIGATURES}</div>
             </div>
           </div>
