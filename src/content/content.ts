@@ -389,7 +389,7 @@ class FontInjector {
     fontName: string;
     fontWeight?: number | string;  // CSS font-weight value (e.g., 400, 700, "bold")
     availableFontWeights?: number[]; // Available numeric weights for nearest mapping (e.g., [300, 400, 700])
-    unifiedWeight?: boolean;       // if true, use slider weight globally instead of mapping
+    preserveTypesettings?: boolean; // if true, preserve site styling and only change family + mapped weights
     fontStyle?: 'normal' | 'italic';
     textTransform: string;
     stylisticSets: number[];
@@ -598,14 +598,14 @@ class FontInjector {
       if (typeof payload.fontWeight === 'number') return payload.fontWeight;
       return this.getFontWeightValue(payload.fontWeight);
     })();
-    const unifiedWeight = !!payload.unifiedWeight;
+    const preserveTypesettings = payload.preserveTypesettings !== false;
     const availableWeightValues = this.getAvailableWeightValues(
       payload.availableFontWeights,
       fontWeightValue
     );
     console.log(
       '[Fonternate] Applied weight mode:',
-      unifiedWeight ? 'unified slider override' : 'nearest mapping'
+      preserveTypesettings ? 'preserve typesettings (mapped)' : 'manual override'
     );
     console.log('[Fonternate] Available mapped weights:', availableWeightValues);
 
@@ -617,8 +617,8 @@ class FontInjector {
     // Collect all CSS properties
     const cssProperties: string[] = [
       `font-family: ${familyCss} !important`,
-      ...(unifiedWeight ? [`font-weight: ${fontWeightValue} !important`] : []),
-      `font-style: ${italicOn ? 'italic' : 'normal'} !important`,
+      ...(!preserveTypesettings ? [`font-weight: ${fontWeightValue} !important`] : []),
+      ...(!preserveTypesettings ? [`font-style: ${italicOn ? 'italic' : 'normal'} !important`] : []),
     ];
     // Sites often set font-synthesis: none, which blocks faux italic; re-enable when italic is requested
     if (italicOn) {
@@ -626,38 +626,40 @@ class FontInjector {
     }
 
     // Add text-transform if set
-    if (payload.textTransform && payload.textTransform !== 'none') {
+    if (!preserveTypesettings && payload.textTransform && payload.textTransform !== 'none') {
       cssProperties.push(`text-transform: ${payload.textTransform} !important`);
     }
     
     // Build font-feature-settings
     const features: string[] = [];
     
-    // Add stylistic sets (with explicit value 1 to enable)
-    if (payload.stylisticSets && Array.isArray(payload.stylisticSets) && payload.stylisticSets.length > 0) {
-      payload.stylisticSets.forEach(num => {
-        // Ensure num is a valid number between 1-20
-        const numValue = typeof num === 'number' ? num : parseInt(num, 10);
-        if (numValue >= 1 && numValue <= 20) {
-          const ssKey = `ss${numValue.toString().padStart(2, '0')}`;
-          features.push(`"${ssKey}" 1`);
-        }
-      });
+    if (!preserveTypesettings) {
+      // Add stylistic sets (with explicit value 1 to enable)
+      if (payload.stylisticSets && Array.isArray(payload.stylisticSets) && payload.stylisticSets.length > 0) {
+        payload.stylisticSets.forEach(num => {
+          // Ensure num is a valid number between 1-20
+          const numValue = typeof num === 'number' ? num : parseInt(num, 10);
+          if (numValue >= 1 && numValue <= 20) {
+            const ssKey = `ss${numValue.toString().padStart(2, '0')}`;
+            features.push(`"${ssKey}" 1`);
+          }
+        });
+      }
+      
+      // Add swash level (with explicit value 1 to enable)
+      if (payload.swashLevel > 0) {
+        features.push('"swsh" 1');
+      }
+      
+      // Add ligature features - always include them, set to 1 (on) or 0 (off)
+      // Ligatures are ON by default in CSS, so we need to explicitly disable them
+      features.push(`"liga" ${payload.liga ? '1' : '0'}`);
+      features.push(`"dlig" ${payload.dlig ? '1' : '0'}`);
+      
+      // Add contextual alternates - always include it, set to 1 (on) or 0 (off)
+      // Contextual alternates are ON by default in CSS, so we need to explicitly disable them
+      features.push(`"calt" ${payload.calt ? '1' : '0'}`);
     }
-    
-    // Add swash level (with explicit value 1 to enable)
-    if (payload.swashLevel > 0) {
-      features.push('"swsh" 1');
-    }
-    
-    // Add ligature features - always include them, set to 1 (on) or 0 (off)
-    // Ligatures are ON by default in CSS, so we need to explicitly disable them
-    features.push(`"liga" ${payload.liga ? '1' : '0'}`);
-    features.push(`"dlig" ${payload.dlig ? '1' : '0'}`);
-    
-    // Add contextual alternates - always include it, set to 1 (on) or 0 (off)
-    // Contextual alternates are ON by default in CSS, so we need to explicitly disable them
-    features.push(`"calt" ${payload.calt ? '1' : '0'}`);
     
     if (features.length > 0) {
       cssProperties.push(`font-feature-settings: ${features.join(', ')} !important`);
@@ -667,10 +669,10 @@ class FontInjector {
     // "Specific styles" (h1, p, …) so metrics sliders affect the whole page.
     const universalSelectors = ['html *', 'body *', 'html body *', '*'];
     const universalMetrics: string[] = [];
-    if (payload.tracking !== undefined) {
+    if (!preserveTypesettings && payload.tracking !== undefined) {
       universalMetrics.push(`letter-spacing: ${payload.tracking}em !important`);
     }
-    if (payload.leading !== undefined) {
+    if (!preserveTypesettings && payload.leading !== undefined) {
       universalMetrics.push(`line-height: ${payload.leading} !important`);
     }
 
@@ -750,7 +752,7 @@ class FontInjector {
     // Per-element nearest weight mapping. This keeps hierarchy (headings vs body)
     // while constraining each element to the closest available weight in the chosen font.
     this.cleanupPerElementWeightMapping();
-    if (!unifiedWeight) {
+    if (preserveTypesettings) {
       this.applyPerElementWeightMapping(selector, availableWeightValues);
       this.setupWeightMappingObserver(selector, availableWeightValues);
     }
@@ -1729,7 +1731,7 @@ class FontInjector {
       textStyles: Array.from(appState.textStyles),
       tracking: appState.tracking,
       leading: appState.leading,
-      unifiedWeight: appState.unifiedWeight,
+      preserveTypesettings: appState.preserveTypesettings,
     });
   }
 }

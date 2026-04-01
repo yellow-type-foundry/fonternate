@@ -683,6 +683,10 @@
   align-items: stretch;
 }
 
+.opentype-features-panel .feature-gap {
+  height: 8px;
+}
+
 /* Stylistic Sets Container */
 .stylistic-sets-container {
   display: flex;
@@ -923,8 +927,8 @@
 
 /* Toggle Switch */
 .toggle-switch {
-  width: 56px;
-  height: 32px;
+  width: 42px;
+  height: 24px;
   border-radius: 8px;
   position: relative;
   cursor: pointer;
@@ -954,8 +958,8 @@
 }
 
 .toggle-switch-handle {
-  width: 24px;
-  height: 24px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   position: absolute;
   transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
@@ -965,7 +969,7 @@
 }
 
 .toggle-switch.active .toggle-switch-handle {
-  transform: translate(28px, -50%);
+  transform: translate(21px, -50%);
   background: linear-gradient(to bottom, #fde9e7, #ffffff);
   border: none;
   box-shadow: 
@@ -977,15 +981,15 @@
 }
 
 .toggle-switch:not(.active) .toggle-switch-handle {
-  transform: translate(4px, -50%);
+  transform: translate(3px, -50%);
   background: white;
   border: none;
   box-shadow: none;
 }
 
 .toggle-switch-icon {
-  width: 16px;
-  height: 20px;
+  width: 12px;
+  height: 15px;
   position: absolute;
   z-index: 2;
   pointer-events: none;
@@ -1002,7 +1006,7 @@
 }
 
 .toggle-switch:not(.active) .toggle-switch-icon {
-  left: 32px;
+  left: 24px;
   transform: translateY(-50%);
   filter: brightness(0) saturate(100%) invert(78%) sepia(8%) saturate(1000%) hue-rotate(320deg) brightness(95%) contrast(90%);
 }

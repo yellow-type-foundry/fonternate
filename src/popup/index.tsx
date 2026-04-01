@@ -142,7 +142,7 @@ const Panel: React.FC = () => {
               textStyles: Array.from(currentState.textStyles),
               tracking: currentState.tracking,
               leading: currentState.leading,
-              unifiedWeight: currentState.unifiedWeight,
+              preserveTypesettings: currentState.preserveTypesettings,
               availableFontWeights: getAvailableWeightValues(),
             },
           })
@@ -222,7 +222,7 @@ const Panel: React.FC = () => {
             textStyles: Array.from(currentState.textStyles),
             tracking: currentState.tracking,
             leading: currentState.leading,
-            unifiedWeight: currentState.unifiedWeight,
+            preserveTypesettings: currentState.preserveTypesettings,
             availableFontWeights: getAvailableWeightValues(),
           },
         })
@@ -543,9 +543,9 @@ const Panel: React.FC = () => {
     });
   };
 
-  const handleUnifiedWeightChange = (value: boolean) => {
+  const handlePreserveTypesettingsChange = (value: boolean) => {
     setState(prev => {
-      const newState = { ...prev, unifiedWeight: value };
+      const newState = { ...prev, preserveTypesettings: value };
       saveAppState(newState);
       if (prev.fontName?.trim()) {
         applyFont(newState, true);
@@ -575,7 +575,7 @@ const Panel: React.FC = () => {
         textStyles: new Set<string>(),
         tracking: 0,
         leading: 1.2,
-        unifiedWeight: false,
+        preserveTypesettings: true,
         capabilities: defaultAppState.capabilities,
         error: null,
         loading: false,
@@ -661,8 +661,8 @@ const Panel: React.FC = () => {
         <div className="feature-gap"></div>
         <div className="feature-row-wrapper">
           <UnifiedWeightToggle
-            value={state.unifiedWeight}
-            onChange={handleUnifiedWeightChange}
+            value={state.preserveTypesettings}
+            onChange={handlePreserveTypesettingsChange}
             disabled={state.loading || !state.fontName?.trim()}
           />
         </div>
@@ -683,7 +683,7 @@ const Panel: React.FC = () => {
               // Weight detection should only run once when font name changes, not on every weight change
               await applyFont(undefined, true); // Use current state
             }}
-            disabled={state.loading || !state.unifiedWeight}
+            disabled={state.loading || state.preserveTypesettings}
             availableWeightSuffixes={availableWeightSuffixes}
           />
         </div>
@@ -693,7 +693,7 @@ const Panel: React.FC = () => {
           leading={state.leading}
           onTrackingChange={handleTrackingChange}
           onLeadingChange={handleLeadingChange}
-          disabled={state.loading || !state.fontName?.trim()}
+          disabled={state.loading || !state.fontName?.trim() || state.preserveTypesettings}
         />
         <div className="feature-gap"></div>
 

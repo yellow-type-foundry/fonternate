@@ -19,7 +19,7 @@ export const UnifiedWeightToggle: React.FC<UnifiedWeightToggleProps> = ({
 
   return (
     <div className="opentype-feature-row">
-      <div className="opentype-feature-sub-label">Unified Weight</div>
+      <div className="opentype-feature-sub-label">Preserve Typesettings</div>
       <div className="opentype-feature-toggle">
         <button
           onClick={handleToggle}

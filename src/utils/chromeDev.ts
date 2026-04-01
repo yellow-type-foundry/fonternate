@@ -27,7 +27,7 @@ const defaultAppState: AppState = {
   textStyles: new Set<string>(),
   tracking: 0,
   leading: 1.2,
-  unifiedWeight: false,
+  preserveTypesettings: true,
   capabilities: defaultCapabilities,
   loading: false,
   error: null,
