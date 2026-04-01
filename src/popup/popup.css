@@ -12,26 +12,18 @@
   50% { background-position: 100% 50%; }
 }
 
-/* Font input container */
+/* Font input container (~25% smaller than original: 0.75 scale) */
 .font-input-container {
   display: flex;
   flex-direction: column;
   width: 100%;
-  gap: 4px;
+  gap: 3px;
   margin-bottom: 0;
   background: #f9f6f5;
-  border-radius: 8px;
-  padding: 10px 14px;
+  border-radius: 6px;
+  padding: 7.5px 10.5px;
   box-sizing: border-box;
   overflow: visible;
-}
-
-.font-dropdown-message {
-  padding: 10px 14px;
-  font-family: 'Inter', sans-serif;
-  font-size: 12px;
-  line-height: 1.4;
-  color: #9e7e76;
 }
 
 /* Font Weight Slider */
@@ -190,12 +182,43 @@
   pointer-events: none;
 }
 
+/* Font weight selector only: ~25% shorter (0.75 scale on vertical layout) */
+.font-weight-selector .slider-inner-container {
+  padding: 6px 8px;
+  min-height: 30px;
+}
+
+.font-weight-selector .slider-tracker {
+  top: 10.5px;
+  height: 9px;
+}
+
+.font-weight-selector .slider-handle {
+  top: 15px;
+  width: 12px;
+  height: 18px;
+}
+
+.font-weight-selector .slider-handle-svg {
+  width: 12px;
+  height: 18px;
+}
+
+.font-weight-selector .slider-tick-line {
+  width: 3px;
+  height: 3px;
+  min-width: 3px;
+  max-width: 3px;
+  min-height: 3px;
+  max-height: 3px;
+}
+
 .font-input {
   background: transparent;
   border: none;
   padding: 0;
   font-family: 'Inter Tight', 'Inter', sans-serif;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 400;
   color: #4a1002;
   flex: 1;
@@ -243,15 +266,15 @@
 .apply-button {
   background: linear-gradient(to bottom, #fa4838, #f88854 45.673%, #f8bfee);
   border: none;
-  padding: 11.5px 23px;
+  padding: 11.5px 20px;
   font-family: 'Roboto Mono', monospace;
-  font-size: 14.375px;
+  font-size: 12px;
   font-weight: 500;
   color: white;
   text-transform: uppercase;
   cursor: pointer;
   white-space: nowrap;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-width: 0;
   display: flex;
   align-items: center;
@@ -284,10 +307,10 @@
 /* Font validation error message */
 .font-error {
   color: #dc2626;
-  font-size: 17.25px;
+  font-size: 13px;
   font-family: 'Roboto Mono', monospace;
-  margin-top: 2.875px;
-  margin-bottom: 5.75px;
+  margin-top: 3px;
+  margin-bottom: 3px;
   display: none;
 }
 
@@ -302,14 +325,18 @@
 
 /* Reset button */
 .reset-button {
-  background: #F2EBE9;
-  color: #6E493F;
+  background: #f2ebe9;
+  color: #6e493f;
   border: none;
-  padding: 0;
+  padding: 11.5px 20px;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
   cursor: pointer;
   white-space: nowrap;
-  flex: 0 0 41px;
-  width: 41px;
+  flex: 1 1 0;
+  min-width: 0;
   height: 41px;
   display: flex;
   align-items: center;
@@ -317,12 +344,6 @@
   border-radius: 8px;
   transition: background 0.2s ease;
   box-sizing: border-box;
-}
-
-.reset-button-icon {
-  width: 20px;
-  height: 20px;
-  display: block;
 }
 
 .reset-button:hover:not(:disabled),
@@ -1171,93 +1192,7 @@
   display: none;
 }
 
-/* Type Tester */
-.type-tester-container {
-  width: 100%;
-  background: #f9f6f5;
-  border-radius: 8px;
-  padding: 16px;
-  box-sizing: border-box;
-  margin-top: 8px;
-  display: block !important;
-  visibility: visible !important;
-  min-height: 200px;
-}
-
-.type-tester-header {
-  font-family: 'Inter', sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin-bottom: 12px;
-}
-
-.type-tester-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.type-tester-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.type-tester-label {
-  font-family: 'Inter', sans-serif;
-  font-size: 11px;
-  font-weight: 500;
-  color: #6E493F;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.type-tester-text {
-  font-size: 16px;
-  line-height: 1.6;
-  color: #1a1a1a;
-  background: white;
-  padding: 12px;
-  border-radius: 6px;
-  border: 1px solid #E9E4E2;
-}
-
-.type-tester-line {
-  margin-bottom: 8px;
-}
-
-.type-tester-line:last-child {
-  margin-bottom: 0;
-}
-
-.type-tester-info {
-  background: white;
-  padding: 12px;
-  border-radius: 6px;
-  border: 1px solid #E9E4E2;
-  font-family: 'Roboto Mono', monospace;
-  font-size: 11px;
-  line-height: 1.8;
-}
-
-.type-tester-info-line {
-  display: flex;
-  gap: 8px;
-}
-
-.type-tester-info-label {
-  color: #6E493F;
-  font-weight: 500;
-  min-width: 120px;
-}
-
-.type-tester-info-value {
-  color: #1a1a1a;
-  flex: 1;
-}
-
-/* Dev Layout - Side by side layout for dev mode */
+/* Dev Layout (webpack dev UI — no extension chrome) */
 .dev-layout-container {
   display: flex;
   flex-direction: row;
@@ -1265,6 +1200,10 @@
   min-height: 100vh;
   background: #f5f5f5;
   gap: 0;
+}
+
+.dev-layout-container.dev-layout-single {
+  justify-content: center;
 }
 
 .dev-layout-sidebar {
@@ -1276,86 +1215,6 @@
   max-height: 100vh;
 }
 
-.dev-layout-preview {
-  flex: 1;
-  padding: 24px;
-  overflow-y: auto;
-  max-height: 100vh;
-  background: white;
+.dev-layout-container.dev-layout-single .dev-layout-sidebar {
+  border-right: none;
 }
-
-.dev-preview-header {
-  font-family: 'Inter', sans-serif;
-  font-size: 18px;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin-bottom: 24px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #E9E4E2;
-}
-
-.dev-preview-content {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.dev-preview-section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.dev-preview-label {
-  font-family: 'Inter', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  color: #6E493F;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.dev-preview-text {
-  font-size: 24px;
-  line-height: 1.8;
-  color: #1a1a1a;
-  background: #f9f6f5;
-  padding: 20px;
-  border-radius: 8px;
-  border: 1px solid #E9E4E2;
-  min-height: 100px;
-}
-
-.dev-preview-line {
-  margin-bottom: 12px;
-}
-
-.dev-preview-line:last-child {
-  margin-bottom: 0;
-}
-
-.dev-preview-info {
-  background: #f9f6f5;
-  padding: 16px;
-  border-radius: 8px;
-  border: 1px solid #E9E4E2;
-  font-family: 'Roboto Mono', monospace;
-  font-size: 12px;
-  line-height: 2;
-}
-
-.dev-preview-info-line {
-  display: flex;
-  gap: 12px;
-}
-
-.dev-preview-info-label {
-  color: #6E493F;
-  font-weight: 600;
-  min-width: 150px;
-}
-
-.dev-preview-info-value {
-  color: #1a1a1a;
-  flex: 1;
-} 

@@ -781,15 +781,12 @@ const Panel: React.FC = () => {
 
       <div className="button-section">
         <button
+          type="button"
           onClick={handleReset}
           className="reset-button"
           disabled={state.loading || !state.fontName?.trim()}
         >
-          <img 
-            src={chrome.runtime.getURL((state.loading || !state.fontName?.trim()) ? 'assets/refresh-disabled.svg' : 'assets/refresh.svg')} 
-            alt="Reset" 
-            className="reset-button-icon" 
-          />
+          Reset
         </button>
         <button
           onClick={() => {
@@ -816,9 +813,9 @@ const Panel: React.FC = () => {
     </div>
   );
 
-  // In dev mode, wrap with DevLayout to show pangrams on the side
+  // Webpack dev UI: centered panel (no extension APIs)
   if (!isExtensionContext()) {
-    return <DevLayout state={state}>{popupContent}</DevLayout>;
+    return <DevLayout>{popupContent}</DevLayout>;
   }
 
   return popupContent;

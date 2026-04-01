@@ -283,7 +283,7 @@ export const FontWeightSelector: React.FC<FontWeightSelectorProps> = ({
   const handleImg = chrome.runtime.getURL('assets/cdbebb17f3c80ce9ed3e39f742a8b05f7af6467b.svg');
 
   return (
-    <div className="font-weight-slider-container">
+    <div className="font-weight-slider-container font-weight-selector">
       {/* Weight Labels */}
       <div className="font-weight-labels">
         {allWeights.map((weight) => {
@@ -339,11 +339,11 @@ export const FontWeightSelector: React.FC<FontWeightSelectorProps> = ({
               src={handleImg} 
               alt="Slider handle" 
               className="slider-handle-svg"
-              style={{ 
-                width: '16px', 
-                height: '24px',
+              style={{
+                width: '12px',
+                height: '18px',
                 objectFit: 'cover',
-                display: 'block'
+                display: 'block',
               }}
             />
           </div>
