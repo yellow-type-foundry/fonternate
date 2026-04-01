@@ -1299,6 +1299,16 @@
   color: #4a1002;
 }
 
+.activation-view {
+  padding: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.activation-button {
+  width: 100%;
+}
+
 /* Pinned iframe (#embed): drop min-heights and extra bottom padding */
 html:has(body.fonternate-embed) {
   height: auto;

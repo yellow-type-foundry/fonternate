@@ -26,7 +26,9 @@ const Panel: React.FC = () => {
   const [openTypeFeaturesExpanded, setOpenTypeFeaturesExpanded] = useState(false);
   const isPinnedIframe = typeof window !== 'undefined' && window.self !== window.top;
   const isEmbedMode = typeof window !== 'undefined' && window.location.hash === '#embed';
+  const isPopupMode = !isPinnedIframe && !isEmbedMode;
   const hideFooterForPinnedPanel = isPinnedIframe || isEmbedMode;
+  const [isActivated, setIsActivated] = useState(false);
   const getAvailableWeightValues = useCallback((): number[] => {
     const allWeights = getAvailableWeightSuffixes();
     if (!availableWeightSuffixes || availableWeightSuffixes.size === 0) {
@@ -130,6 +132,10 @@ const Panel: React.FC = () => {
     try {
       const savedState = await getAppState();
       setState(savedState);
+      if (!isPinnedIframe) {
+        const status = await chrome.storage.local.get(['fonternatePopupActivated']);
+        setIsActivated(Boolean(status.fonternatePopupActivated));
+      }
       
       // Don't auto-apply - let user select from installed fonts
       // The font dropdown will show available installed fonts
@@ -725,6 +731,53 @@ const Panel: React.FC = () => {
       }));
     }
   }, [detectCapabilities, applyFont]);
+
+  const handleActivate = useCallback(async () => {
+    try {
+      await sendMessage({ type: 'ACTIVATE_PINNED_PANEL' });
+      await chrome.storage.local.set({ fonternatePopupActivated: true });
+      setIsActivated(true);
+      window.close();
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        error: error instanceof Error ? error.message : 'Failed to activate',
+      }));
+    }
+  }, []);
+
+  const handleDisable = useCallback(async () => {
+    try {
+      await sendMessage({ type: 'DISABLE_EXTENSION_EFFECTS' });
+      await chrome.storage.local.set({ fonternatePopupActivated: false });
+      setIsActivated(false);
+      window.close();
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        error: error instanceof Error ? error.message : 'Failed to disable',
+      }));
+    }
+  }, []);
+
+  if (isPopupMode) {
+    return (
+      <div className="popup-content popup-content-compact">
+        <div className="popup-main-content">
+          <div className="button-section popup-activation-section">
+            <button
+              type="button"
+              onClick={isActivated ? handleDisable : handleActivate}
+              className="apply-button"
+            >
+              {isActivated ? 'Disable' : 'Activate'}
+            </button>
+          </div>
+          {state.error && <div className="font-error show">{state.error}</div>}
+        </div>
+      </div>
+    );
+  }
 
   const popupContent = (
     <div className={`popup-content ${state.preserveTypesettings ? 'popup-content-compact' : ''}`}>

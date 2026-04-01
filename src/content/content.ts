@@ -1,7 +1,7 @@
 import { FontSettings, ChromeMessage, AppState } from '../types';
 import { getFontSettings, getAppState } from '../utils/chrome';
 import { getInstalledFonts, InstalledFont } from '../utils/fontDetection';
-import { initPinnedPanelFromStorage, togglePinnedPanel } from './pinnedPanel';
+import { initPinnedPanelFromStorage, removePinnedPanel, togglePinnedPanel } from './pinnedPanel';
 
 class FontInjector {
   private settings: FontSettings | null = null;
@@ -97,6 +97,21 @@ class FontInjector {
           return true; // Keep message channel open for async response
         case 'TOGGLE_PINNED_PANEL':
           togglePinnedPanel();
+          sendResponse({ success: true });
+          return true;
+        case 'ACTIVATE_PINNED_PANEL':
+          initPinnedPanelFromStorage().then(() => {
+            if (!document.getElementById('fonternate-pinned-host')) {
+              togglePinnedPanel();
+            }
+            sendResponse({ success: true });
+          }).catch((error) => {
+            sendResponse({ success: false, error: error instanceof Error ? error.message : 'Failed to activate pinned panel' });
+          });
+          return true;
+        case 'DISABLE_EXTENSION_EFFECTS':
+          removePinnedPanel();
+          this.handleResetAll();
           sendResponse({ success: true });
           return true;
       }

@@ -58,6 +58,40 @@ chrome.runtime.onMessage.addListener((message: ChromeMessage, sender, sendRespon
         sendResponse(newSettings);
       });
       return true;
+
+    case 'ACTIVATE_PINNED_PANEL':
+      chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+        if (tabs[0]?.id) {
+          try {
+            await chrome.tabs.sendMessage(tabs[0].id, {
+              type: 'ACTIVATE_PINNED_PANEL',
+            });
+            sendResponse({ success: true });
+          } catch (error) {
+            sendResponse({ success: false, error: error instanceof Error ? error.message : 'Failed to activate pinned panel' });
+          }
+        } else {
+          sendResponse({ success: false, error: 'No active tab' });
+        }
+      });
+      return true;
+
+    case 'DISABLE_EXTENSION_EFFECTS':
+      chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+        if (tabs[0]?.id) {
+          try {
+            await chrome.tabs.sendMessage(tabs[0].id, {
+              type: 'DISABLE_EXTENSION_EFFECTS',
+            });
+            sendResponse({ success: true });
+          } catch (error) {
+            sendResponse({ success: false, error: error instanceof Error ? error.message : 'Failed to disable extension effects' });
+          }
+        } else {
+          sendResponse({ success: false, error: 'No active tab' });
+        }
+      });
+      return true;
       
     case 'RESET_FONTS':
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
