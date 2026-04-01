@@ -737,7 +737,7 @@
   display: flex;
   gap: 7.2px;
   height: 32px;
-  width: 136px;
+  width: 68px;
   background: #f9f6f5;
   border-radius: 8px;
   padding: 7.2px 7.2px 7.2px 11.5px;
@@ -899,7 +899,7 @@
   justify-content: space-between;
   height: 32px;
   width: 100%;
-  background: white;
+  background: transparent;
 }
 
 .opentype-feature-label {
