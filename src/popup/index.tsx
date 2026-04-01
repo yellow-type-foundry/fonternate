@@ -25,6 +25,7 @@ import {
   SwashLevelSegmented,
   LigatureToggles,
   ContextualAltToggle,
+  UnifiedWeightToggle,
   TextStylesToggleGroup,
   TypographyMetricsSliders,
 } from './components';
@@ -37,6 +38,15 @@ const Panel: React.FC = () => {
   const [availableWeightSuffixes, setAvailableWeightSuffixes] = useState<Set<string> | undefined>(undefined);
   const [openTypeFeaturesExpanded, setOpenTypeFeaturesExpanded] = useState(false);
   const isPinnedIframe = typeof window !== 'undefined' && window.self !== window.top;
+  const getAvailableWeightValues = useCallback((): number[] => {
+    const allWeights = getAvailableWeightSuffixes();
+    if (!availableWeightSuffixes || availableWeightSuffixes.size === 0) {
+      return allWeights.map((w) => w.weight);
+    }
+    return allWeights
+      .filter((w) => availableWeightSuffixes.has(w.suffix))
+      .map((w) => w.weight);
+  }, [availableWeightSuffixes]);
 
   useEffect(() => {
     initializePanel();
@@ -132,6 +142,8 @@ const Panel: React.FC = () => {
               textStyles: Array.from(currentState.textStyles),
               tracking: currentState.tracking,
               leading: currentState.leading,
+              unifiedWeight: currentState.unifiedWeight,
+              availableFontWeights: getAvailableWeightValues(),
             },
           })
             .then(() => {
@@ -210,6 +222,8 @@ const Panel: React.FC = () => {
             textStyles: Array.from(currentState.textStyles),
             tracking: currentState.tracking,
             leading: currentState.leading,
+            unifiedWeight: currentState.unifiedWeight,
+            availableFontWeights: getAvailableWeightValues(),
           },
         })
           .then(() => {
@@ -244,7 +258,7 @@ const Panel: React.FC = () => {
         return loadingState;
       });
     });
-  }, []);
+  }, [getAvailableWeightValues]);
 
   const detectCapabilities = useCallback(async (fontName: string) => {
     // Use font name as-is - don't add weight suffixes
@@ -529,6 +543,17 @@ const Panel: React.FC = () => {
     });
   };
 
+  const handleUnifiedWeightChange = (value: boolean) => {
+    setState(prev => {
+      const newState = { ...prev, unifiedWeight: value };
+      saveAppState(newState);
+      if (prev.fontName?.trim()) {
+        applyFont(newState, true);
+      }
+      return newState;
+    });
+  };
+
   const handleReset = async () => {
     try {
       await sendMessage({ type: 'RESET_ALL' });
@@ -550,6 +575,7 @@ const Panel: React.FC = () => {
         textStyles: new Set<string>(),
         tracking: 0,
         leading: 1.2,
+        unifiedWeight: false,
         capabilities: defaultAppState.capabilities,
         error: null,
         loading: false,
@@ -634,6 +660,14 @@ const Panel: React.FC = () => {
         />
         <div className="feature-gap"></div>
         <div className="feature-row-wrapper">
+          <UnifiedWeightToggle
+            value={state.unifiedWeight}
+            onChange={handleUnifiedWeightChange}
+            disabled={state.loading || !state.fontName?.trim()}
+          />
+        </div>
+        <div className="feature-gap"></div>
+        <div className="feature-row-wrapper">
           <FontWeightSelector
             fontName={state.fontName}
             fontWeight={state.fontWeight}
@@ -649,7 +683,7 @@ const Panel: React.FC = () => {
               // Weight detection should only run once when font name changes, not on every weight change
               await applyFont(undefined, true); // Use current state
             }}
-            disabled={state.loading}
+            disabled={state.loading || !state.unifiedWeight}
             availableWeightSuffixes={availableWeightSuffixes}
           />
         </div>

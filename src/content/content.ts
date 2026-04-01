@@ -8,6 +8,8 @@ class FontInjector {
   private appState: AppState | null = null;
   private styleElement: HTMLStyleElement | null = null;
   private installedFontsCache: Array<{ family: string; fullName: string }> = [];
+  private weightMappingObserver: MutationObserver | null = null;
+  private weightMappingRaf: number | null = null;
 
   constructor() {
     console.log('[Fonternate] Content script initialized');
@@ -231,6 +233,7 @@ class FontInjector {
   }
 
   private removeFontStyle() {
+    this.cleanupPerElementWeightMapping();
     if (this.styleElement) {
       this.styleElement.remove();
       this.styleElement = null;
@@ -239,6 +242,103 @@ class FontInjector {
 
   private resetFonts() {
     this.removeFontStyle();
+  }
+
+  private normalizeNumericWeight(rawWeight: string): number {
+    const normalized = rawWeight.trim().toLowerCase();
+    if (normalized === 'normal') return 400;
+    if (normalized === 'bold') return 700;
+    if (normalized === 'bolder') return 700;
+    if (normalized === 'lighter') return 300;
+    const parsed = Number.parseInt(normalized, 10);
+    return Number.isFinite(parsed) ? parsed : 400;
+  }
+
+  private clampToCssWeightStep(weight: number): number {
+    return Math.max(100, Math.min(900, Math.round(weight / 100) * 100));
+  }
+
+  private mapToNearestAvailableWeight(weight: number, availableWeights: number[]): number {
+    if (availableWeights.length === 0) {
+      return this.clampToCssWeightStep(weight);
+    }
+    let best = availableWeights[0];
+    let bestDistance = Math.abs(weight - best);
+    for (let i = 1; i < availableWeights.length; i += 1) {
+      const candidate = availableWeights[i];
+      const distance = Math.abs(weight - candidate);
+      if (distance < bestDistance || (distance === bestDistance && candidate > best)) {
+        best = candidate;
+        bestDistance = distance;
+      }
+    }
+    return this.clampToCssWeightStep(best);
+  }
+
+  private getAvailableWeightValues(
+    payloadWeights: number[] | undefined,
+    fallbackWeight: number
+  ): number[] {
+    const source = Array.isArray(payloadWeights) && payloadWeights.length > 0
+      ? payloadWeights
+      : [fallbackWeight];
+    const uniqueSorted = Array.from(
+      new Set(
+        source
+          .filter((w) => Number.isFinite(w))
+          .map((w) => this.clampToCssWeightStep(w))
+      )
+    ).sort((a, b) => a - b);
+    return uniqueSorted.length > 0 ? uniqueSorted : [this.clampToCssWeightStep(fallbackWeight)];
+  }
+
+  private cleanupPerElementWeightMapping(): void {
+    if (this.weightMappingObserver) {
+      this.weightMappingObserver.disconnect();
+      this.weightMappingObserver = null;
+    }
+    if (this.weightMappingRaf !== null) {
+      cancelAnimationFrame(this.weightMappingRaf);
+      this.weightMappingRaf = null;
+    }
+    const mappedNodes = document.querySelectorAll<HTMLElement>('[data-fonternate-weight-mapped="1"]');
+    mappedNodes.forEach((el) => {
+      el.style.removeProperty('font-weight');
+      el.removeAttribute('data-fonternate-weight-mapped');
+    });
+  }
+
+  private applyPerElementWeightMapping(selector: string, availableWeights: number[]): void {
+    const selectorToUse = selector && selector.trim() ? selector : '*';
+    const nodes = document.querySelectorAll<HTMLElement>(selectorToUse);
+    nodes.forEach((el) => {
+      const computed = window.getComputedStyle(el).fontWeight;
+      const originalWeight = this.normalizeNumericWeight(computed);
+      const mappedWeight = this.mapToNearestAvailableWeight(originalWeight, availableWeights);
+      el.style.setProperty('font-weight', String(mappedWeight), 'important');
+      el.setAttribute('data-fonternate-weight-mapped', '1');
+    });
+  }
+
+  private setupWeightMappingObserver(selector: string, availableWeights: number[]): void {
+    if (!document.body) return;
+    if (this.weightMappingObserver) {
+      this.weightMappingObserver.disconnect();
+      this.weightMappingObserver = null;
+    }
+    this.weightMappingObserver = new MutationObserver(() => {
+      if (this.weightMappingRaf !== null) return;
+      this.weightMappingRaf = requestAnimationFrame(() => {
+        this.weightMappingRaf = null;
+        this.applyPerElementWeightMapping(selector, availableWeights);
+      });
+    });
+    this.weightMappingObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style'],
+    });
   }
 
   private async resolveExactFontName(userInput: string): Promise<string> {
@@ -288,6 +388,8 @@ class FontInjector {
   private async handleApplyFont(payload: {
     fontName: string;
     fontWeight?: number | string;  // CSS font-weight value (e.g., 400, 700, "bold")
+    availableFontWeights?: number[]; // Available numeric weights for nearest mapping (e.g., [300, 400, 700])
+    unifiedWeight?: boolean;       // if true, use slider weight globally instead of mapping
     fontStyle?: 'normal' | 'italic';
     textTransform: string;
     stylisticSets: number[];
@@ -496,7 +598,16 @@ class FontInjector {
       if (typeof payload.fontWeight === 'number') return payload.fontWeight;
       return this.getFontWeightValue(payload.fontWeight);
     })();
-    console.log('[Fonternate] Applied font-weight:', fontWeightValue);
+    const unifiedWeight = !!payload.unifiedWeight;
+    const availableWeightValues = this.getAvailableWeightValues(
+      payload.availableFontWeights,
+      fontWeightValue
+    );
+    console.log(
+      '[Fonternate] Applied weight mode:',
+      unifiedWeight ? 'unified slider override' : 'nearest mapping'
+    );
+    console.log('[Fonternate] Available mapped weights:', availableWeightValues);
 
     const italicOn =
       payload.fontStyle === 'italic' ||
@@ -506,7 +617,7 @@ class FontInjector {
     // Collect all CSS properties
     const cssProperties: string[] = [
       `font-family: ${familyCss} !important`,
-      `font-weight: ${fontWeightValue} !important`,
+      ...(unifiedWeight ? [`font-weight: ${fontWeightValue} !important`] : []),
       `font-style: ${italicOn ? 'italic' : 'normal'} !important`,
     ];
     // Sites often set font-synthesis: none, which blocks faux italic; re-enable when italic is requested
@@ -588,7 +699,7 @@ class FontInjector {
         const isLoaded = document.fonts.check(fontSpec);
         console.log('[Fonternate] Font load result:', isLoaded ? '✅ Loaded' : '❌ Not loaded');
         
-        // Also try with font-weight
+        // Also try with requested font-weight
         const fontSpecWithWeight = `${fontWeightValue} 16px "${exactFontName}"`;
         await document.fonts.load(fontSpecWithWeight);
         const isLoadedWithWeight = document.fonts.check(fontSpecWithWeight);
@@ -635,6 +746,14 @@ class FontInjector {
     // Force immediate reflow to ensure Safari applies styles
     void document.documentElement.offsetHeight;
     void document.body?.offsetHeight;
+
+    // Per-element nearest weight mapping. This keeps hierarchy (headings vs body)
+    // while constraining each element to the closest available weight in the chosen font.
+    this.cleanupPerElementWeightMapping();
+    if (!unifiedWeight) {
+      this.applyPerElementWeightMapping(selector, availableWeightValues);
+      this.setupWeightMappingObserver(selector, availableWeightValues);
+    }
     
     // Verify style was injected immediately
     const injectedStyle = document.getElementById('font-override-style');
@@ -1610,6 +1729,7 @@ class FontInjector {
       textStyles: Array.from(appState.textStyles),
       tracking: appState.tracking,
       leading: appState.leading,
+      unifiedWeight: appState.unifiedWeight,
     });
   }
 }

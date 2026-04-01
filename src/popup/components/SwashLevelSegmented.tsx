@@ -27,7 +27,7 @@ export const SwashLevelSegmented: React.FC<SwashLevelSegmentedProps> = ({
 
   return (
     <div className="opentype-feature-row">
-      <div className="opentype-feature-label">Swash</div>
+      <div className="opentype-feature-sub-label">Swash</div>
       <div className="opentype-feature-toggle">
         <button
           onClick={handleToggle}

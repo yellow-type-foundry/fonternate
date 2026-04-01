@@ -6,6 +6,7 @@ export { StylisticSetsToggleGroup } from './StylisticSetsToggleGroup';
 export { SwashLevelSegmented } from './SwashLevelSegmented';
 export { LigatureToggles } from './LigatureToggles';
 export { ContextualAltToggle } from './ContextualAltToggle';
+export { UnifiedWeightToggle } from './UnifiedWeightToggle';
 export { TextStylesToggleGroup } from './TextStylesToggleGroup';
 export { TrackingSlider } from './TrackingSlider';
 export { SizeSlider } from './SizeSlider';

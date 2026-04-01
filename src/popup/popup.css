@@ -899,6 +899,24 @@
   white-space: nowrap;
 }
 
+.opentype-feature-sub-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: #9e7e76;
+  white-space: nowrap;
+}
+
+.opentype-subfeature-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
 .opentype-slider-label-row .opentype-slider-feature-label {
   flex-shrink: 0;
 }

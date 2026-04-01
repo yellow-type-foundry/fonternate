@@ -1,29 +1,25 @@
 import React from 'react';
 
-interface ContextualAltToggleProps {
+interface UnifiedWeightToggleProps {
   value: boolean;
-  supportsCALT: boolean;
   onChange: (value: boolean) => void;
   disabled?: boolean;
 }
 
-export const ContextualAltToggle: React.FC<ContextualAltToggleProps> = ({
+export const UnifiedWeightToggle: React.FC<UnifiedWeightToggleProps> = ({
   value,
-  supportsCALT,
   onChange,
   disabled = false,
 }) => {
   const toggleIcon = chrome.runtime.getURL('assets/bb8b02ee61663c03686c8906db3c0ef84f6a282f.svg');
 
   const handleToggle = () => {
-    if (!disabled) {
-      onChange(!value);
-    }
+    if (!disabled) onChange(!value);
   };
 
   return (
     <div className="opentype-feature-row">
-      <div className="opentype-feature-sub-label">Contextual Alternates</div>
+      <div className="opentype-feature-sub-label">Unified Weight</div>
       <div className="opentype-feature-toggle">
         <button
           onClick={handleToggle}
@@ -38,5 +34,3 @@ export const ContextualAltToggle: React.FC<ContextualAltToggleProps> = ({
     </div>
   );
 };
-
-

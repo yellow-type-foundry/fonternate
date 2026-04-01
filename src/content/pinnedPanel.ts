@@ -9,7 +9,7 @@ const STORAGE_COLLAPSED = 'fonternatePinnedCollapsed';
 
 const POPUP_URL = () => `${chrome.runtime.getURL('popup.html')}#embed`;
 const PINNED_PANEL_WIDTH = 300;
-const PINNED_PANEL_HEIGHT = 240;
+const PINNED_PANEL_HEIGHT = 300;
 
 let escapeHandler: ((e: KeyboardEvent) => void) | null = null;
 
@@ -50,7 +50,7 @@ function injectPinnedPanel(startCollapsed: boolean): void {
   style.textContent = `
     .fab {
       position: fixed;
-      top: 12px;
+      bottom: 12px;
       left: 12px;
       z-index: 2147483647;
       width: 40px;
@@ -79,7 +79,7 @@ function injectPinnedPanel(startCollapsed: boolean): void {
     }
     .panel {
       position: fixed;
-      top: 12px;
+      bottom: 12px;
       left: 12px;
       z-index: 2147483647;
       width: ${PINNED_PANEL_WIDTH}px;

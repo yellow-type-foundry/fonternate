@@ -25,6 +25,7 @@ export interface AppState {
   /** Universal metrics: applied to all elements, not scoped by `textStyles`. */
   tracking: number;                 // Letter-spacing in em units, default 0
   leading: number;                  // Line-height (unitless), default 1.2
+  unifiedWeight: boolean;           // when true, slider overrides mapped per-element weights
   capabilities: FontCapabilities;   // detected per selected font
   loading: boolean;                 // while applying or probing features
   error?: string | null;            // UX toast/message

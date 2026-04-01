@@ -56,6 +56,7 @@ export const defaultAppState: AppState = {
   textStyles: new Set<string>(),
   tracking: 0,
   leading: 1.2,
+  unifiedWeight: false,
   capabilities: defaultCapabilities,
   loading: false,
   error: null,
@@ -162,6 +163,9 @@ export const getAppState = async (): Promise<AppState> => {
         }
         if (!state.fontStyle || (state.fontStyle !== 'normal' && state.fontStyle !== 'italic')) {
           state.fontStyle = 'normal';
+        }
+        if (typeof state.unifiedWeight !== 'boolean') {
+          state.unifiedWeight = false;
         }
         // Handle backward compatibility: if fontWeight is missing, parse fontName or default to 'regular'
         if (!state.fontWeight) {
