@@ -38,6 +38,8 @@ const Panel: React.FC = () => {
   const [availableWeightSuffixes, setAvailableWeightSuffixes] = useState<Set<string> | undefined>(undefined);
   const [openTypeFeaturesExpanded, setOpenTypeFeaturesExpanded] = useState(false);
   const isPinnedIframe = typeof window !== 'undefined' && window.self !== window.top;
+  const isEmbedMode = typeof window !== 'undefined' && window.location.hash === '#embed';
+  const hideFooterForPinnedPanel = isPinnedIframe || isEmbedMode;
   const getAvailableWeightValues = useCallback((): number[] => {
     const allWeights = getAvailableWeightSuffixes();
     if (!availableWeightSuffixes || availableWeightSuffixes.size === 0) {
@@ -70,17 +72,23 @@ const Panel: React.FC = () => {
     const postHeight = () => {
       try {
         const root = document.getElementById('root');
-        const body = document.body;
-        const html = document.documentElement;
+        const popupContent = document.querySelector('.popup-content') as HTMLElement | null;
+        const mainContent = document.querySelector('.popup-main-content') as HTMLElement | null;
         const rootRectH = root?.getBoundingClientRect().height ?? 0;
+        const popupRectH = popupContent?.getBoundingClientRect().height ?? 0;
+        const mainRectH = mainContent?.getBoundingClientRect().height ?? 0;
+        // Use intrinsic content boxes only so the iframe can shrink back down.
+        // Avoid body/html heights because those can mirror the current iframe viewport.
         const height = Math.max(
+          popupContent?.scrollHeight ?? 0,
+          popupContent?.offsetHeight ?? 0,
+          popupRectH,
+          mainContent?.scrollHeight ?? 0,
+          mainContent?.offsetHeight ?? 0,
+          mainRectH,
           root?.scrollHeight ?? 0,
           root?.offsetHeight ?? 0,
-          rootRectH,
-          body?.scrollHeight ?? 0,
-          body?.offsetHeight ?? 0,
-          html?.scrollHeight ?? 0,
-          html?.offsetHeight ?? 0
+          rootRectH
         );
         window.parent.postMessage(
           { type: 'FONTERNATE_EMBED_HEIGHT', height: Math.ceil(height) },
@@ -107,6 +115,10 @@ const Panel: React.FC = () => {
       resizeObserver.observe(document.body);
       const root = document.getElementById('root');
       if (root) resizeObserver.observe(root);
+      const popupContent = document.querySelector('.popup-content');
+      if (popupContent) resizeObserver.observe(popupContent);
+      const mainContent = document.querySelector('.popup-main-content');
+      if (mainContent) resizeObserver.observe(mainContent);
 
       mutationObserver = new MutationObserver(() => schedulePost());
       mutationObserver.observe(document.body, {
@@ -747,8 +759,7 @@ const Panel: React.FC = () => {
           loading={state.loading}
           error={state.error || undefined}
         />
-        <div className="feature-gap"></div>
-        <div className="feature-row-wrapper">
+        <div className="feature-row-wrapper preserve-typesettings-row">
           <UnifiedWeightToggle
             value={state.preserveTypesettings}
             onChange={handlePreserveTypesettingsChange}
@@ -916,13 +927,15 @@ const Panel: React.FC = () => {
           </button>
         </div>
       )}
-      <div className="footer-note">
-        Fonternate v{getDisplayedExtensionVersion()} © 2026 LAMBAO. Find me at{' '}
-        <a href="https://instagram.com/lamg.bao" target="_blank" rel="noopener noreferrer">
-          @lamg.bao
-        </a>
-      </div>
-      {!isPinnedIframe && isExtensionContext() && (
+      {!hideFooterForPinnedPanel && (
+        <div className="footer-note">
+          Fonternate v{getDisplayedExtensionVersion()} © 2026 LAMBAO. Find me at{' '}
+          <a href="https://instagram.com/lamg.bao" target="_blank" rel="noopener noreferrer">
+            @lamg.bao
+          </a>
+        </div>
+      )}
+      {!hideFooterForPinnedPanel && isExtensionContext() && (
         <div className="footer-pin-wrap">
           <button type="button" className="pin-to-page-button" onClick={handlePinToPage}>
             Pin to page

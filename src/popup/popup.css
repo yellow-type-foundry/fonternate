@@ -18,7 +18,7 @@
   flex-direction: column;
   width: 100%;
   gap: 3px;
-  margin-bottom: 0;
+  margin-bottom: 8px;
   background: #f9f6f5;
   border-radius: 8px;
   padding: 7.5px 10.5px;
@@ -444,6 +444,10 @@
 .feature-gap {
   height: 20px;
   width: 100%;
+}
+
+.preserve-typesettings-row {
+  padding-top: 0;
 }
 
 /* Divider */
@@ -1316,7 +1320,7 @@ body.fonternate-embed .button-section {
 }
 
 body.fonternate-embed .footer-note {
-  padding: 0 20px 10px 20px;
+  display: none;
 }
 
 body.fonternate-embed .footer-pin-wrap {
