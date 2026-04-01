@@ -286,7 +286,7 @@ export const FontWeightSelector: React.FC<FontWeightSelectorProps> = ({
     <div className="font-weight-slider-container font-weight-selector">
       {/* Weight Labels */}
       <div className="font-weight-labels">
-        {allWeights.map((weight) => {
+        {allWeights.map((weight, index) => {
           const isActive = weight.suffix === fontWeight;
           const isAvailable = isWeightAvailable(weight.suffix);
           return (
@@ -294,7 +294,7 @@ export const FontWeightSelector: React.FC<FontWeightSelectorProps> = ({
               key={weight.suffix}
               className={`font-weight-label ${isActive ? 'active' : ''} ${isDisabled || !isAvailable ? 'disabled' : ''}`}
             >
-              {weight.label}
+              {index + 1}
             </span>
           );
         })}

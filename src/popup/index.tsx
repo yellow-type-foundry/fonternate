@@ -26,9 +26,7 @@ import {
   LigatureToggles,
   ContextualAltToggle,
   TextStylesToggleGroup,
-  TrackingSlider,
-  SizeSlider,
-  LeadingSlider,
+  TypographyMetricsSliders,
 } from './components';
 import { DevLayout } from './DevLayout';
 import { isExtensionContext } from '../utils/chromeDev';
@@ -133,7 +131,6 @@ const Panel: React.FC = () => {
               calt: currentState.calt,
               textStyles: Array.from(currentState.textStyles),
               tracking: currentState.tracking,
-              fontSize: currentState.fontSize,
               leading: currentState.leading,
             },
           })
@@ -159,6 +156,8 @@ const Panel: React.FC = () => {
                 dlig: currentState.dlig,
                 calt: currentState.calt,
                 textStyles: currentState.textStyles,
+                tracking: currentState.tracking,
+                leading: currentState.leading,
               };
               saveAppState(stateForSave);
               
@@ -210,7 +209,6 @@ const Panel: React.FC = () => {
             calt: currentState.calt,
             textStyles: Array.from(currentState.textStyles),
             tracking: currentState.tracking,
-            fontSize: currentState.fontSize,
             leading: currentState.leading,
           },
         })
@@ -518,19 +516,6 @@ const Panel: React.FC = () => {
     });
   };
 
-  const handleFontSizeChange = (fontSize: number) => {
-    setState(prev => {
-      const newState = { ...prev, fontSize };
-      // Apply immediately in real-time
-      if (prev.fontName?.trim()) {
-        applyFont(newState, true); // Skip state update to avoid re-render loop
-      }
-      // Save state asynchronously
-      saveAppState(newState);
-      return newState;
-    });
-  };
-
   const handleLeadingChange = (leading: number) => {
     setState(prev => {
       const newState = { ...prev, leading };
@@ -564,8 +549,7 @@ const Panel: React.FC = () => {
         calt: false,
         textStyles: new Set<string>(),
         tracking: 0,
-        fontSize: 16,
-        leading: 1.5,
+        leading: 1.2,
         capabilities: defaultAppState.capabilities,
         error: null,
         loading: false,
@@ -670,6 +654,14 @@ const Panel: React.FC = () => {
           />
         </div>
         <div className="feature-gap"></div>
+        <TypographyMetricsSliders
+          tracking={state.tracking}
+          leading={state.leading}
+          onTrackingChange={handleTrackingChange}
+          onLeadingChange={handleLeadingChange}
+          disabled={state.loading || !state.fontName?.trim()}
+        />
+        <div className="feature-gap"></div>
 
         <div className="feature-row-wrapper feature-row-segmented-pair">
           <TextTransformSegmented
@@ -762,34 +754,6 @@ const Panel: React.FC = () => {
                   disabled={state.loading || !state.fontName?.trim()}
                 />
               </div>
-              {state.textStyles.size > 0 && (
-                <>
-                  <div className="feature-gap"></div>
-                  <div className="feature-row-wrapper">
-                    <TrackingSlider
-                      value={state.tracking}
-                      onChange={handleTrackingChange}
-                      disabled={state.loading || !state.fontName?.trim()}
-                    />
-                  </div>
-                  <div className="feature-gap"></div>
-                  <div className="feature-row-wrapper">
-                    <SizeSlider
-                      value={state.fontSize}
-                      onChange={handleFontSizeChange}
-                      disabled={state.loading || !state.fontName?.trim()}
-                    />
-                  </div>
-                  <div className="feature-gap"></div>
-                  <div className="feature-row-wrapper">
-                    <LeadingSlider
-                      value={state.leading}
-                      onChange={handleLeadingChange}
-                      disabled={state.loading || !state.fontName?.trim()}
-                    />
-                  </div>
-                </>
-              )}
             </div>
           )}
         </div>

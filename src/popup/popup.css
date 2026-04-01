@@ -213,6 +213,28 @@
   max-height: 3px;
 }
 
+/* Tracking / leading / size sliders — same track + thumb scale as weight slider */
+.slider-compact .slider-inner-container {
+  padding: 6px 8px;
+  min-height: 30px;
+}
+
+.slider-compact .slider-tracker {
+  top: 10.5px;
+  height: 9px;
+}
+
+.slider-compact .slider-handle {
+  top: 15px;
+  width: 12px;
+  height: 18px;
+}
+
+.slider-compact .slider-handle-svg {
+  width: 12px;
+  height: 18px;
+}
+
 .font-input {
   background: transparent;
   border: none;
@@ -1245,14 +1267,21 @@
 body.fonternate-embed {
   min-height: 0 !important;
   height: auto;
+  width: 100% !important;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 body.fonternate-embed #root {
   min-height: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 body.fonternate-embed .popup-content {
   min-height: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 body.fonternate-embed .button-section {

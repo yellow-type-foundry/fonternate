@@ -297,7 +297,6 @@ class FontInjector {
     calt: boolean;
     textStyles?: string[];
     tracking?: number;              // Letter-spacing in em units
-    fontSize?: number;               // Font-size in px units
     leading?: number;               // Line-height (unitless)
   }) {
     if (!payload.fontName?.trim()) {
@@ -335,9 +334,9 @@ class FontInjector {
     this.styleElement = document.createElement('style');
     this.styleElement.id = 'font-override-style';
     
-    // Build CSS selector based on textStyles
-    // If textStyles is empty or not provided, apply to all elements (*)
-    // Otherwise, apply only to selected text styles
+    // Build CSS selector for font + OpenType (not for tracking/leading — those are universal).
+    // If textStyles is empty or not provided, apply to all elements (*).
+    // Otherwise, apply only to selected tags (h1, p, …).
     const selector = (payload.textStyles && payload.textStyles.length > 0)
       ? payload.textStyles.join(', ')
       : '*';
@@ -514,22 +513,7 @@ class FontInjector {
     if (italicOn) {
       cssProperties.push(`font-synthesis: weight style !important`);
     }
-    
-    // Add tracking (letter-spacing) if textStyles are selected
-    if (payload.textStyles && payload.textStyles.length > 0 && payload.tracking !== undefined) {
-      cssProperties.push(`letter-spacing: ${payload.tracking}em !important`);
-    }
-    
-    // Add font-size if textStyles are selected
-    if (payload.textStyles && payload.textStyles.length > 0 && payload.fontSize !== undefined) {
-      cssProperties.push(`font-size: ${payload.fontSize}px !important`);
-    }
-    
-    // Add leading (line-height) if textStyles are selected
-    if (payload.textStyles && payload.textStyles.length > 0 && payload.leading !== undefined) {
-      cssProperties.push(`line-height: ${payload.leading} !important`);
-    }
-    
+
     // Add text-transform if set
     if (payload.textTransform && payload.textTransform !== 'none') {
       cssProperties.push(`text-transform: ${payload.textTransform} !important`);
@@ -567,12 +551,28 @@ class FontInjector {
     if (features.length > 0) {
       cssProperties.push(`font-feature-settings: ${features.join(', ')} !important`);
     }
-    
-    // Create CSS rule for each selector with all properties
-    // Safari needs multiple high-specificity rules to override site styles
-    const css = cssSelectors.map(sel => 
-      `${sel} { ${cssProperties.join('; ')}; }`
-    ).join('\n');
+
+    // Universal tracking / size / leading: always target all elements, independent of
+    // "Specific styles" (h1, p, …) so metrics sliders affect the whole page.
+    const universalSelectors = ['html *', 'body *', 'html body *', '*'];
+    const universalMetrics: string[] = [];
+    if (payload.tracking !== undefined) {
+      universalMetrics.push(`letter-spacing: ${payload.tracking}em !important`);
+    }
+    if (payload.leading !== undefined) {
+      universalMetrics.push(`line-height: ${payload.leading} !important`);
+    }
+
+    const mainCss = cssSelectors
+      .map(sel => `${sel} { ${cssProperties.join('; ')}; }`)
+      .join('\n');
+    const metricsCss =
+      universalMetrics.length > 0
+        ? universalSelectors
+            .map(sel => `${sel} { ${universalMetrics.join('; ')}; }`)
+            .join('\n')
+        : '';
+    const css = [mainCss, metricsCss].filter(Boolean).join('\n');
     
     console.log('[Fonternate] Generated CSS:', css);
     console.log('[Fonternate] Font-family stack:', familyCss);
@@ -1609,7 +1609,6 @@ class FontInjector {
       calt: appState.calt,
       textStyles: Array.from(appState.textStyles),
       tracking: appState.tracking,
-      fontSize: appState.fontSize,
       leading: appState.leading,
     });
   }

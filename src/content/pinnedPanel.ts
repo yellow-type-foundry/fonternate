@@ -8,6 +8,8 @@ const STORAGE_VISIBLE = 'fonternatePinnedPanel';
 const STORAGE_COLLAPSED = 'fonternatePinnedCollapsed';
 
 const POPUP_URL = () => `${chrome.runtime.getURL('popup.html')}#embed`;
+const PINNED_PANEL_WIDTH = 300;
+const PINNED_PANEL_HEIGHT = 240;
 
 let escapeHandler: ((e: KeyboardEvent) => void) | null = null;
 
@@ -27,46 +29,6 @@ function attachEscapeHandler(collapse: () => void): void {
     }
   };
   document.addEventListener('keydown', escapeHandler, true);
-}
-
-/** Returns a function to re-measure iframe content height (same-origin only). */
-function wireIframeAutoResize(iframe: HTMLIFrameElement): () => void {
-  const update = () => {
-    try {
-      const doc = iframe.contentDocument;
-      const body = doc?.body;
-      const html = doc?.documentElement;
-      if (!body) return;
-      const h = Math.max(
-        body.scrollHeight,
-        body.offsetHeight,
-        html?.scrollHeight ?? 0,
-        html?.offsetHeight ?? 0
-      );
-      const max = Math.min(window.innerHeight * 0.92 - 48, 900);
-      iframe.style.height = `${Math.min(h + 6, max)}px`;
-    } catch {
-      // ignore
-    }
-  };
-
-  iframe.addEventListener('load', () => {
-    update();
-    try {
-      const doc = iframe.contentDocument;
-      if (doc?.body) {
-        const ro = new ResizeObserver(() => update());
-        ro.observe(doc.body);
-        if (doc.documentElement) {
-          ro.observe(doc.documentElement);
-        }
-      }
-    } catch {
-      // ignore
-    }
-  });
-
-  return update;
 }
 
 export function removePinnedPanel(): void {
@@ -101,12 +63,13 @@ function injectPinnedPanel(startCollapsed: boolean): void {
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #6e493f;
-      font-size: 24px;
-      font-weight: 300;
-      line-height: 1;
+      color: #1c1f21;
       padding: 0;
       box-sizing: border-box;
+    }
+    .fab svg {
+      display: block;
+      flex-shrink: 0;
     }
     .fab:hover {
       background: #e9e4e2;
@@ -119,14 +82,15 @@ function injectPinnedPanel(startCollapsed: boolean): void {
       top: 12px;
       left: 12px;
       z-index: 2147483647;
-      width: 393px;
+      width: ${PINNED_PANEL_WIDTH}px;
+      height: ${PINNED_PANEL_HEIGHT}px;
       max-width: calc(100vw - 24px);
       max-height: calc(100vh - 24px);
       display: flex;
       flex-direction: column;
+      box-sizing: border-box;
       border-radius: 12px;
-      overflow-x: hidden;
-      overflow-y: auto;
+      overflow: hidden;
       box-shadow: 0 8px 32px rgba(0,0,0,0.18);
       background: #fff;
       font-family: system-ui, -apple-system, sans-serif;
@@ -134,35 +98,35 @@ function injectPinnedPanel(startCollapsed: boolean): void {
     .panel.hidden {
       display: none !important;
     }
-    .bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 6px 10px;
-      background: #f9f6f5;
-      border-bottom: 1px solid #e9e4e2;
-      flex-shrink: 0;
-      font-size: 11px;
-      font-weight: 600;
-      color: #6e493f;
+    .panel-content {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 0;
     }
     .close {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      z-index: 2;
       border: none;
       background: transparent;
       cursor: pointer;
-      font-size: 20px;
+      font-size: 18px;
       line-height: 1;
       color: #6e493f;
-      padding: 0 4px;
-      border-radius: 4px;
+      width: 20px;
+      height: 20px;
+      padding: 0;
+      border-radius: 8px;
+      flex-shrink: 0;
     }
     .close:hover {
       background: #e9e4e2;
     }
     iframe {
       width: 100%;
+      height: 100%;
       min-height: 0;
-      height: 400px;
       border: none;
       display: block;
     }
@@ -174,28 +138,52 @@ function injectPinnedPanel(startCollapsed: boolean): void {
     panel.classList.add('hidden');
   }
 
-  const bar = document.createElement('div');
-  bar.className = 'bar';
-  const title = document.createElement('span');
-  title.textContent = 'Fonternate';
   const close = document.createElement('button');
   close.type = 'button';
   close.className = 'close';
   close.setAttribute('aria-label', 'Collapse panel');
   close.textContent = '×';
+  const content = document.createElement('div');
+  content.className = 'panel-content';
 
   const iframe = document.createElement('iframe');
   iframe.src = POPUP_URL();
   iframe.title = 'Fonternate';
   iframe.setAttribute('allow', 'clipboard-read; clipboard-write');
 
-  const updateIframeHeight = wireIframeAutoResize(iframe);
-
   const fab = document.createElement('button');
   fab.type = 'button';
   fab.className = 'fab';
   fab.setAttribute('aria-label', 'Expand Fonternate');
-  fab.textContent = '+';
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const plusSvg = document.createElementNS(svgNS, 'svg');
+  plusSvg.setAttribute('width', '18');
+  plusSvg.setAttribute('height', '18');
+  plusSvg.setAttribute('viewBox', '0 0 18 18');
+  plusSvg.setAttribute('aria-hidden', 'true');
+  const lineV = document.createElementNS(svgNS, 'line');
+  lineV.setAttribute('x1', '9');
+  lineV.setAttribute('y1', '3.25');
+  lineV.setAttribute('x2', '9');
+  lineV.setAttribute('y2', '14.75');
+  lineV.setAttribute('fill', 'none');
+  lineV.setAttribute('stroke', 'currentColor');
+  lineV.setAttribute('stroke-linecap', 'round');
+  lineV.setAttribute('stroke-linejoin', 'round');
+  lineV.setAttribute('stroke-width', '1.5');
+  const lineH = document.createElementNS(svgNS, 'line');
+  lineH.setAttribute('x1', '3.25');
+  lineH.setAttribute('y1', '9');
+  lineH.setAttribute('x2', '14.75');
+  lineH.setAttribute('y2', '9');
+  lineH.setAttribute('fill', 'none');
+  lineH.setAttribute('stroke', 'currentColor');
+  lineH.setAttribute('stroke-linecap', 'round');
+  lineH.setAttribute('stroke-linejoin', 'round');
+  lineH.setAttribute('stroke-width', '1.5');
+  plusSvg.appendChild(lineV);
+  plusSvg.appendChild(lineH);
+  fab.appendChild(plusSvg);
   if (!startCollapsed) {
     fab.classList.add('hidden');
   }
@@ -211,21 +199,15 @@ function injectPinnedPanel(startCollapsed: boolean): void {
     panel.classList.remove('hidden');
     fab.classList.add('hidden');
     void chrome.storage?.local?.set({ [STORAGE_COLLAPSED]: false });
-    requestAnimationFrame(() => {
-      updateIframeHeight();
-      setTimeout(updateIframeHeight, 120);
-      setTimeout(updateIframeHeight, 400);
-    });
     attachEscapeHandler(collapse);
   };
 
   close.addEventListener('click', collapse);
   fab.addEventListener('click', expand);
 
-  bar.appendChild(title);
-  bar.appendChild(close);
-  panel.appendChild(bar);
-  panel.appendChild(iframe);
+  content.appendChild(close);
+  content.appendChild(iframe);
+  panel.appendChild(content);
 
   shadow.appendChild(style);
   shadow.appendChild(fab);

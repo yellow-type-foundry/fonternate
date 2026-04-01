@@ -43,11 +43,11 @@ export const TrackingSlider: React.FC<TrackingSliderProps> = ({
     const trackerWidth = trackerRect.width;
     const trackerLeft = trackerRect.left - innerContainerRect.left;
     const innerContainerWidth = innerContainerRect.width;
-    const handleWidth = 16;
+    const handleWidth = 12;
     
     const percentage = getHandlePosition(value);
     const handleCenterPosition = trackerLeft + (percentage / 100) * trackerWidth;
-    let left = handleCenterPosition - 8;
+    let left = handleCenterPosition - handleWidth / 2;
     
     const maxLeft = innerContainerWidth - handleWidth;
     left = Math.max(0, Math.min(left, maxLeft));
@@ -151,7 +151,7 @@ export const TrackingSlider: React.FC<TrackingSliderProps> = ({
   const handleImg = chrome.runtime.getURL('assets/cdbebb17f3c80ce9ed3e39f742a8b05f7af6467b.svg');
   
   return (
-    <div className="font-weight-slider-container">
+    <div className="font-weight-slider-container slider-compact">
       <div className="opentype-slider-label-row">
         <span className="opentype-slider-feature-label">Tracking</span>
         <span className="opentype-slider-value">
@@ -176,16 +176,11 @@ export const TrackingSlider: React.FC<TrackingSliderProps> = ({
             style={{ left: handleLeftPosition }}
             onMouseDown={handleMouseDown}
           >
-            <img 
-              src={handleImg} 
-              alt="Slider handle" 
+            <img
+              src={handleImg}
+              alt="Slider handle"
               className="slider-handle-svg"
-              style={{ 
-                width: '16px', 
-                height: '24px',
-                objectFit: 'cover',
-                display: 'block'
-              }}
+              style={{ objectFit: 'cover', display: 'block' }}
             />
           </div>
         </div>

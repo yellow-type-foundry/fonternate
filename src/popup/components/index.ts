@@ -10,6 +10,7 @@ export { TextStylesToggleGroup } from './TextStylesToggleGroup';
 export { TrackingSlider } from './TrackingSlider';
 export { SizeSlider } from './SizeSlider';
 export { LeadingSlider } from './LeadingSlider';
+export { TypographyMetricsSliders } from './TypographyMetricsSliders';
 export { SegmentedControl } from './SegmentedControl';
 export type { SegmentedControlOption } from './SegmentedControl';
 

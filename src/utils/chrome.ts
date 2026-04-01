@@ -55,8 +55,7 @@ export const defaultAppState: AppState = {
   calt: true,
   textStyles: new Set<string>(),
   tracking: 0,
-  fontSize: 16,
-  leading: 1.5,
+  leading: 1.2,
   capabilities: defaultCapabilities,
   loading: false,
   error: null,
@@ -157,6 +156,9 @@ export const getAppState = async (): Promise<AppState> => {
         }
         if (Array.isArray(state.textStyles)) {
           state.textStyles = new Set(state.textStyles);
+        }
+        if ('fontSize' in state) {
+          delete (state as Record<string, unknown>).fontSize;
         }
         if (!state.fontStyle || (state.fontStyle !== 'normal' && state.fontStyle !== 'italic')) {
           state.fontStyle = 'normal';
