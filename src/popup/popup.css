@@ -450,6 +450,10 @@
   padding-top: 0;
 }
 
+.preserve-typesettings-row .opentype-feature-row {
+  background: transparent !important;
+}
+
 /* Divider */
 .feature-divider {
   width: 100%;
@@ -1301,18 +1305,21 @@ body.fonternate-embed {
   width: 100% !important;
   max-width: 100%;
   box-sizing: border-box;
+  background: transparent !important;
 }
 
 body.fonternate-embed #root {
   min-height: 0;
   max-width: 100%;
   box-sizing: border-box;
+  background: transparent;
 }
 
 body.fonternate-embed .popup-content {
   min-height: 0;
   max-width: 100%;
   box-sizing: border-box;
+  background: transparent;
 }
 
 body.fonternate-embed .button-section {

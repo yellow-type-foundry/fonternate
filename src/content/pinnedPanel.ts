@@ -147,7 +147,9 @@ function injectPinnedPanel(startCollapsed: boolean): void {
       height: 40px;
       border-radius: 50%;
       border: 1px solid #e9e4e2;
-      background: #f9f6f5;
+      background: rgba(255, 255, 255, 0.9);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
       box-shadow: 0 4px 16px rgba(0,0,0,0.16);
       cursor: pointer;
       display: flex;
@@ -162,7 +164,7 @@ function injectPinnedPanel(startCollapsed: boolean): void {
       flex-shrink: 0;
     }
     .fab:hover {
-      background: #e9e4e2;
+      background: rgba(255, 255, 255, 0.96);
     }
     .fab.hidden {
       display: none !important;
@@ -182,7 +184,9 @@ function injectPinnedPanel(startCollapsed: boolean): void {
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-      background: #fff;
+      background: rgba(255, 255, 255, 0.9);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
       font-family: system-ui, -apple-system, sans-serif;
       transition: height 180ms ease;
     }
@@ -220,6 +224,7 @@ function injectPinnedPanel(startCollapsed: boolean): void {
       min-height: 0;
       border: none;
       display: block;
+      background: transparent;
     }
   `;
 
@@ -240,6 +245,7 @@ function injectPinnedPanel(startCollapsed: boolean): void {
   const iframe = document.createElement('iframe');
   iframe.title = 'Fonternate';
   iframe.setAttribute('allow', 'clipboard-read; clipboard-write');
+  iframe.setAttribute('allowtransparency', 'true');
   const updatePanelHeight = wirePinnedPanelAutoResize(iframe);
   removeEmbedLayoutListener();
   embedLayoutMessageListener = (ev: MessageEvent) => {
