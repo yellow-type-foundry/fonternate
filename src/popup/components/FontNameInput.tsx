@@ -23,6 +23,7 @@ export const FontNameInput: React.FC<FontNameInputProps> = ({
   // Use local state that syncs with prop when prop changes externally (e.g., after Reset)
   const [localValue, setLocalValue] = useState(value);
   const [installedFonts, setInstalledFonts] = useState<InstalledFont[]>([]);
+  const [fontsLoading, setFontsLoading] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
   const [filteredFonts, setFilteredFonts] = useState<InstalledFont[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -31,12 +32,17 @@ export const FontNameInput: React.FC<FontNameInputProps> = ({
   
   // Load installed fonts on mount
   useEffect(() => {
-    getInstalledFonts().then(fonts => {
-      setInstalledFonts(fonts);
-      setFilteredFonts(fonts);
-    }).catch(err => {
-      console.error('[Fonternate] Failed to load installed fonts:', err);
-    });
+    getInstalledFonts()
+      .then((fonts) => {
+        setInstalledFonts(fonts);
+        setFilteredFonts(fonts);
+      })
+      .catch((err) => {
+        console.error('[Fonternate] Failed to load installed fonts:', err);
+      })
+      .finally(() => {
+        setFontsLoading(false);
+      });
   }, []);
 
   // Sync localValue with prop when prop changes, but only if input is not focused (user not typing)
@@ -169,17 +175,18 @@ export const FontNameInput: React.FC<FontNameInputProps> = ({
         }}
         onBlur={() => {
           isFocusedRef.current = false;
-          // Delay closing dropdown to allow click on dropdown items
-          setTimeout(() => setShowDropdown(false), 200);
+          // Delay closing dropdown so mousedown + click on items can run first
+          setTimeout(() => setShowDropdown(false), 180);
         }}
         placeholder="Select or type font name"
         className={`font-input ${error ? 'error' : ''} ${loading ? 'loading' : ''}`}
         disabled={loading}
       />
-      {showDropdown && filteredFonts.length > 0 && (
-        <div 
+      {showDropdown && (
+        <div
           ref={dropdownRef}
           className="font-dropdown"
+          onMouseDown={(e) => e.preventDefault()}
           style={{
             position: 'absolute',
             top: '100%',
@@ -195,27 +202,41 @@ export const FontNameInput: React.FC<FontNameInputProps> = ({
             boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
           }}
         >
-          {filteredFonts.map((font, index) => (
-            <div
-              key={index}
-              onClick={() => handleFontSelect(font)}
-              style={{
-                padding: '10px 14px',
-                cursor: 'pointer',
-                fontFamily: `"${font.family}"`,
-                fontSize: '14px',
-                borderBottom: index < filteredFonts.length - 1 ? '1px solid #f5f5f5' : 'none',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.backgroundColor = '#f9f6f5';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.backgroundColor = 'white';
-              }}
-            >
-              {font.family}
+          {fontsLoading ? (
+            <div className="font-dropdown-message">Loading fonts…</div>
+          ) : filteredFonts.length > 0 ? (
+            filteredFonts.map((font, index) => (
+              <div
+                key={`${font.family}-${index}`}
+                role="option"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => handleFontSelect(font)}
+                style={{
+                  padding: '10px 14px',
+                  cursor: 'pointer',
+                  fontFamily: `"${font.family}"`,
+                  fontSize: '14px',
+                  borderBottom: index < filteredFonts.length - 1 ? '1px solid #f5f5f5' : 'none',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.backgroundColor = '#f9f6f5';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.backgroundColor = 'white';
+                }}
+              >
+                {font.family}
+              </div>
+            ))
+          ) : (
+            <div className="font-dropdown-message">
+              {localValue.trim()
+                ? 'No matching fonts'
+                : installedFonts.length === 0
+                  ? "Can't load system fonts — type a name and press Enter."
+                  : 'No fonts to show'}
             </div>
-          ))}
+          )}
         </div>
       )}
       {error && (

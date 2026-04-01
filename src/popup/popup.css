@@ -23,6 +23,15 @@
   border-radius: 8px;
   padding: 10px 14px;
   box-sizing: border-box;
+  overflow: visible;
+}
+
+.font-dropdown-message {
+  padding: 10px 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #9e7e76;
 }
 
 /* Font Weight Slider */
@@ -551,6 +560,78 @@
   flex-direction: column;
   gap: 4px;
   margin: 4px 0;
+}
+
+.opentype-features-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.opentype-features-heading-toggle {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: #9e7e76;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.opentype-features-heading-toggle:hover {
+  color: #6e493f;
+}
+
+.opentype-features-heading-toggle:focus-visible {
+  outline: 2px solid rgba(250, 72, 56, 0.45);
+  outline-offset: 2px;
+}
+
+.opentype-features-heading-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.opentype-features-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  color: #9e7e76;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.opentype-features-heading-toggle:hover .opentype-features-chevron {
+  color: #6e493f;
+}
+
+.opentype-features-chevron.expanded {
+  transform: rotate(90deg);
+}
+
+.opentype-features-chevron svg {
+  display: block;
+}
+
+.opentype-features-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 /* Stylistic Sets Container */

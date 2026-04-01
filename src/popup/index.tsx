@@ -25,6 +25,7 @@ import './popup.css';
 const Panel: React.FC = () => {
   const [state, setState] = useState<AppState>(defaultAppState);
   const [availableWeightSuffixes, setAvailableWeightSuffixes] = useState<Set<string> | undefined>(undefined);
+  const [openTypeFeaturesExpanded, setOpenTypeFeaturesExpanded] = useState(false);
 
   useEffect(() => {
     initializePanel();
@@ -655,85 +656,114 @@ const Panel: React.FC = () => {
         </div>
         <div className="feature-gap"></div>
 
-        <div className="feature-row-wrapper">
-          <StylisticSetsToggleGroup
-            selected={state.stylisticSets}
-            available={state.capabilities.ss}
-            onChange={handleStylisticSetToggle}
-            disabled={state.loading || !state.fontName?.trim()}
-          />
-        </div>
-        <div className="feature-gap"></div>
-
-        <div className="feature-row-wrapper">
-          <LigatureToggles
-            liga={state.liga}
-            dlig={state.dlig}
-            supportsLIGA={state.capabilities.supportsLIGA}
-            supportsDLIG={state.capabilities.supportsDLIG}
-            onChange={handleLigatureChange}
-            disabled={state.loading || !state.fontName?.trim()}
-          />
-        </div>
-        <div className="feature-gap"></div>
-
-        <div className="feature-row-wrapper">
-          <SwashLevelSegmented
-            value={state.swashLevel}
-            availableLevels={state.capabilities.swashLevels}
-            onChange={handleSwashLevelChange}
-            disabled={state.loading || !state.fontName?.trim()}
-          />
-        </div>
-        <div className="feature-gap"></div>
-
-        <div className="feature-row-wrapper">
-          <ContextualAltToggle
-            value={state.calt}
-            supportsCALT={state.capabilities.supportsCALT}
-            onChange={handleCaltChange}
-            disabled={state.loading || !state.fontName?.trim()}
-          />
-        </div>
-        <div className="feature-gap"></div>
-
-        <div className="feature-row-wrapper">
-          <TextStylesToggleGroup
-            selected={state.textStyles}
-            onChange={handleTextStyleToggle}
-            disabled={state.loading || !state.fontName?.trim()}
-          />
-        </div>
-        {state.textStyles.size > 0 && (
-          <>
-            <div className="feature-gap"></div>
-            <div className="feature-row-wrapper">
-              <TrackingSlider
-                value={state.tracking}
-                onChange={handleTrackingChange}
-                disabled={state.loading || !state.fontName?.trim()}
-              />
+        <div className="feature-row-wrapper opentype-features-section">
+          <button
+            type="button"
+            className="opentype-features-heading-toggle"
+            onClick={() => setOpenTypeFeaturesExpanded((e) => !e)}
+            aria-expanded={openTypeFeaturesExpanded}
+            aria-controls="opentype-features-panel"
+            id="opentype-features-heading"
+          >
+            <span
+              className={`opentype-features-chevron ${openTypeFeaturesExpanded ? 'expanded' : ''}`}
+              aria-hidden
+            >
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M3.5 1.5L6.5 5L3.5 8.5"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+            <span className="opentype-features-heading-label">OpenType Features</span>
+          </button>
+          {openTypeFeaturesExpanded && (
+            <div
+              className="opentype-features-panel"
+              id="opentype-features-panel"
+              role="region"
+              aria-labelledby="opentype-features-heading"
+            >
+              <div className="feature-row-wrapper">
+                <StylisticSetsToggleGroup
+                  selected={state.stylisticSets}
+                  available={state.capabilities.ss}
+                  onChange={handleStylisticSetToggle}
+                  disabled={state.loading || !state.fontName?.trim()}
+                />
+              </div>
+              <div className="feature-gap"></div>
+              <div className="feature-row-wrapper">
+                <LigatureToggles
+                  liga={state.liga}
+                  dlig={state.dlig}
+                  supportsLIGA={state.capabilities.supportsLIGA}
+                  supportsDLIG={state.capabilities.supportsDLIG}
+                  onChange={handleLigatureChange}
+                  disabled={state.loading || !state.fontName?.trim()}
+                />
+              </div>
+              <div className="feature-gap"></div>
+              <div className="feature-row-wrapper">
+                <SwashLevelSegmented
+                  value={state.swashLevel}
+                  availableLevels={state.capabilities.swashLevels}
+                  onChange={handleSwashLevelChange}
+                  disabled={state.loading || !state.fontName?.trim()}
+                />
+              </div>
+              <div className="feature-gap"></div>
+              <div className="feature-row-wrapper">
+                <ContextualAltToggle
+                  value={state.calt}
+                  supportsCALT={state.capabilities.supportsCALT}
+                  onChange={handleCaltChange}
+                  disabled={state.loading || !state.fontName?.trim()}
+                />
+              </div>
+              <div className="feature-gap"></div>
+              <div className="feature-row-wrapper">
+                <TextStylesToggleGroup
+                  selected={state.textStyles}
+                  onChange={handleTextStyleToggle}
+                  disabled={state.loading || !state.fontName?.trim()}
+                />
+              </div>
+              {state.textStyles.size > 0 && (
+                <>
+                  <div className="feature-gap"></div>
+                  <div className="feature-row-wrapper">
+                    <TrackingSlider
+                      value={state.tracking}
+                      onChange={handleTrackingChange}
+                      disabled={state.loading || !state.fontName?.trim()}
+                    />
+                  </div>
+                  <div className="feature-gap"></div>
+                  <div className="feature-row-wrapper">
+                    <SizeSlider
+                      value={state.fontSize}
+                      onChange={handleFontSizeChange}
+                      disabled={state.loading || !state.fontName?.trim()}
+                    />
+                  </div>
+                  <div className="feature-gap"></div>
+                  <div className="feature-row-wrapper">
+                    <LeadingSlider
+                      value={state.leading}
+                      onChange={handleLeadingChange}
+                      disabled={state.loading || !state.fontName?.trim()}
+                    />
+                  </div>
+                </>
+              )}
             </div>
-            <div className="feature-gap"></div>
-            <div className="feature-row-wrapper">
-              <SizeSlider
-                value={state.fontSize}
-                onChange={handleFontSizeChange}
-                disabled={state.loading || !state.fontName?.trim()}
-              />
-            </div>
-            <div className="feature-gap"></div>
-            <div className="feature-row-wrapper">
-              <LeadingSlider
-                value={state.leading}
-                onChange={handleLeadingChange}
-                disabled={state.loading || !state.fontName?.trim()}
-              />
-            </div>
-          </>
-        )}
-        <div className="feature-gap"></div>
-        <hr className="feature-divider" />
+          )}
+        </div>
         <div className="feature-gap"></div>
       </div>
 
