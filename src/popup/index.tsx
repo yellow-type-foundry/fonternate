@@ -26,8 +26,8 @@ const Panel: React.FC = () => {
   const [openTypeFeaturesExpanded, setOpenTypeFeaturesExpanded] = useState(false);
   const isPinnedIframe = typeof window !== 'undefined' && window.self !== window.top;
   const isEmbedMode = typeof window !== 'undefined' && window.location.hash === '#embed';
-  const isPopupMode = !isPinnedIframe && !isEmbedMode;
-  const hideFooterForPinnedPanel = isPinnedIframe || isEmbedMode;
+  const isPopupMode = !isEmbedMode;
+  const hideFooterForPinnedPanel = isEmbedMode;
   const [isActivated, setIsActivated] = useState(false);
   const getAvailableWeightValues = useCallback((): number[] => {
     const allWeights = getAvailableWeightSuffixes();
