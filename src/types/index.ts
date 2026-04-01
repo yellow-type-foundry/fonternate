@@ -25,6 +25,7 @@ export interface AppState {
   /** Universal metrics: applied to all elements, not scoped by `textStyles`. */
   tracking: number;                 // Letter-spacing in em units, default 0
   leading: number;                  // Line-height (unitless), default 1.2
+  availableFontWeights?: number[];  // Persisted detected numeric weights for cross-page nearest mapping
   preserveTypesettings: boolean;    // when true, keep site typesettings and only change font + mapped weights
   capabilities: FontCapabilities;   // detected per selected font
   loading: boolean;                 // while applying or probing features

@@ -172,6 +172,15 @@ export const getAppState = async (): Promise<AppState> => {
             state.preserveTypesettings = true;
           }
         }
+        if (!Array.isArray((state as Record<string, unknown>).availableFontWeights)) {
+          (state as Record<string, unknown>).availableFontWeights = undefined;
+        } else {
+          (state as Record<string, unknown>).availableFontWeights = (
+            (state as Record<string, unknown>).availableFontWeights as unknown[]
+          )
+            .filter((w) => typeof w === 'number' && Number.isFinite(w))
+            .map((w) => Math.max(100, Math.min(900, Math.round((w as number) / 100) * 100)));
+        }
         if ('unifiedWeight' in state) {
           delete (state as Record<string, unknown>).unifiedWeight;
         }

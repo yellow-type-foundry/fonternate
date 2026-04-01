@@ -3,19 +3,6 @@ import { createRoot } from 'react-dom/client';
 import { AppState, FontCapabilities, FontStyle, TextTransform } from '../types';
 import { getAppState, saveAppState, sendMessage, defaultAppState } from '../utils/chrome';
 import { parseFontName, buildFontName, getAvailableWeightSuffixes } from '../utils/fontUtils';
-import pkg from '../../package.json';
-
-/** Footer + chrome://extensions use manifest version; package.json is fallback (e.g. webpack dev UI). */
-function getDisplayedExtensionVersion(): string {
-  try {
-    if (typeof chrome !== 'undefined' && chrome.runtime?.getManifest) {
-      return chrome.runtime.getManifest().version;
-    }
-  } catch {
-    // non-extension context
-  }
-  return pkg.version;
-}
 import {
   FontNameInput,
   FontWeightSelector,
@@ -190,6 +177,8 @@ const Panel: React.FC = () => {
 
         // Debug logging removed for production
 
+        const detectedAvailableWeights = getAvailableWeightValues();
+
         // If skipStateUpdate is true, don't change any state - just apply the font
         if (skipStateUpdate) {
           // Get numeric font-weight value from weight suffix
@@ -224,7 +213,7 @@ const Panel: React.FC = () => {
               tracking: currentState.tracking,
               leading: currentState.leading,
               preserveTypesettings: currentState.preserveTypesettings,
-              availableFontWeights: getAvailableWeightValues(),
+              availableFontWeights: detectedAvailableWeights,
             },
           })
             .then(() => {
@@ -251,6 +240,7 @@ const Panel: React.FC = () => {
                 textStyles: currentState.textStyles,
                 tracking: currentState.tracking,
                 leading: currentState.leading,
+                availableFontWeights: detectedAvailableWeights,
               };
               saveAppState(stateForSave);
               
@@ -304,7 +294,7 @@ const Panel: React.FC = () => {
             tracking: currentState.tracking,
             leading: currentState.leading,
             preserveTypesettings: currentState.preserveTypesettings,
-            availableFontWeights: getAvailableWeightValues(),
+            availableFontWeights: detectedAvailableWeights,
           },
         })
           .then(() => {
@@ -318,6 +308,7 @@ const Panel: React.FC = () => {
               const newState: AppState = {
                 ...prevState,
                 lastFontName: newLastFontName,
+                availableFontWeights: detectedAvailableWeights,
                 loading: false,
                 error: null,
               };
@@ -736,7 +727,7 @@ const Panel: React.FC = () => {
   }, [detectCapabilities, applyFont]);
 
   const popupContent = (
-    <div className="popup-content">
+    <div className={`popup-content ${state.preserveTypesettings ? 'popup-content-compact' : ''}`}>
       <div className="popup-main-content">
         <FontNameInput
           value={state.fontName}
@@ -925,14 +916,6 @@ const Panel: React.FC = () => {
           >
             APPLY
           </button>
-        </div>
-      )}
-      {!hideFooterForPinnedPanel && (
-        <div className="footer-note">
-          Fonternate v{getDisplayedExtensionVersion()} © 2026 LAMBAO. Find me at{' '}
-          <a href="https://instagram.com/lamg.bao" target="_blank" rel="noopener noreferrer">
-            @lamg.bao
-          </a>
         </div>
       )}
       {!hideFooterForPinnedPanel && isExtensionContext() && (

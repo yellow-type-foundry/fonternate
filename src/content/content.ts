@@ -436,12 +436,12 @@ class FontInjector {
     this.styleElement = document.createElement('style');
     this.styleElement.id = 'font-override-style';
     
-    // Build CSS selector for font + OpenType (not for tracking/leading — those are universal).
-    // If textStyles is empty or not provided, apply to all elements (*).
-    // Otherwise, apply only to selected tags (h1, p, …).
-    const selector = (payload.textStyles && payload.textStyles.length > 0)
-      ? payload.textStyles.join(', ')
-      : '*';
+    const preserveTypesettings = payload.preserveTypesettings !== false;
+    // Build CSS selector for font + OpenType controls.
+    // Preserve mode should affect the full page regardless of manual text-style selections.
+    const selector = preserveTypesettings || !payload.textStyles || payload.textStyles.length === 0
+      ? '*'
+      : payload.textStyles.join(', ');
     
     // Build a comprehensive stack of font-family variants to maximize matching
     const buildFontFamilyStack = (fontName: string): string[] => {
@@ -598,7 +598,6 @@ class FontInjector {
       if (typeof payload.fontWeight === 'number') return payload.fontWeight;
       return this.getFontWeightValue(payload.fontWeight);
     })();
-    const preserveTypesettings = payload.preserveTypesettings !== false;
     const availableWeightValues = this.getAvailableWeightValues(
       payload.availableFontWeights,
       fontWeightValue
@@ -620,8 +619,8 @@ class FontInjector {
       ...(!preserveTypesettings ? [`font-weight: ${fontWeightValue} !important`] : []),
       ...(!preserveTypesettings ? [`font-style: ${italicOn ? 'italic' : 'normal'} !important`] : []),
     ];
-    // Sites often set font-synthesis: none, which blocks faux italic; re-enable when italic is requested
-    if (italicOn) {
+    // Sites often set font-synthesis: none, which blocks faux italic; re-enable only in manual override mode.
+    if (!preserveTypesettings && italicOn) {
       cssProperties.push(`font-synthesis: weight style !important`);
     }
 
@@ -1721,6 +1720,7 @@ class FontInjector {
     this.handleApplyFont({
       fontName: appState.fontName,
       fontWeight: this.getFontWeightValue(appState.fontWeight || 'regular'),
+      availableFontWeights: appState.availableFontWeights,
       fontStyle: appState.fontStyle,
       textTransform: appState.textTransform,
       stylisticSets: Array.from(appState.stylisticSets),

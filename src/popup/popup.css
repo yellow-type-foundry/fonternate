@@ -1220,7 +1220,7 @@
 .popup-content {
   padding: 0;
   width: 100%;
-  min-height: 200px;
+  min-height: 0;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -1228,6 +1228,10 @@
   border: none;
   border-radius: 0;
   overflow: visible;
+}
+
+.popup-content.popup-content-compact {
+  justify-content: flex-start;
 }
 
 .popup-main-content {
@@ -1273,7 +1277,8 @@
 }
 
 .footer-pin-wrap {
-  padding: 0 20px 16px 20px;
+  margin-top: 8px;
+  padding: 0 20px 12px 20px;
   text-align: center;
   box-sizing: border-box;
 }
@@ -1283,7 +1288,8 @@
   border: none;
   color: #6e493f;
   font-family: 'Inter', sans-serif;
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 600;
   text-decoration: underline;
   cursor: pointer;
   padding: 4px 8px;
