@@ -1286,6 +1286,11 @@
 }
 
 /* Pinned iframe (#embed): drop min-heights and extra bottom padding */
+html:has(body.fonternate-embed) {
+  height: auto;
+  min-height: 0;
+}
+
 body.fonternate-embed {
   min-height: 0 !important;
   height: auto;

@@ -166,7 +166,8 @@ export const getAppState = async (): Promise<AppState> => {
         }
         if (typeof state.preserveTypesettings !== 'boolean') {
           if (typeof (state as Record<string, unknown>).unifiedWeight === 'boolean') {
-            state.preserveTypesettings = !(state as Record<string, unknown>).unifiedWeight as boolean;
+            // Legacy `unifiedWeight` used the same polarity as Preserve Typesettings (ON = preserve mapped weights / no manual slider).
+            state.preserveTypesettings = (state as Record<string, unknown>).unifiedWeight as boolean;
           } else {
             state.preserveTypesettings = true;
           }
