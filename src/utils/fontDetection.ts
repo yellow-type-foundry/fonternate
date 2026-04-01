@@ -27,10 +27,39 @@ function mergeUniqueByFamily(a: InstalledFont[], b: InstalledFont[]): InstalledF
  * 2. Font Access API (Chrome/Edge) - gets ALL fonts
  * 3. Dynamic detection methods (no hardcoded lists)
  */
+function installedFontsFromFontData(fonts: Iterable<{ family?: string; fullName?: string; postscriptName?: string; style?: string }>): InstalledFont[] {
+  const uniqueFamilies = new Map<string, InstalledFont>();
+  for (const font of fonts) {
+    const family = font.family || font.postscriptName?.split('-')[0] || 'Unknown';
+    const key = family.toLowerCase();
+    if (!uniqueFamilies.has(key)) {
+      uniqueFamilies.set(key, {
+        family,
+        fullName: font.fullName || font.postscriptName || family,
+        postscriptName: font.postscriptName,
+        style: font.style,
+      });
+    }
+  }
+  return Array.from(uniqueFamilies.values()).sort((a, b) => a.family.localeCompare(b.family));
+}
+
 export async function getInstalledFonts(): Promise<InstalledFont[]> {
   console.log('[Fonternate] Starting font detection...');
 
-  // Let @font-face / web fonts register in document.fonts before DOM-based fallback (popup is tiny otherwise)
+  // Chrome/Edge: queryLocalFonts() must be *invoked* synchronously in the same user-activation
+  // stack as the gesture (focus/click). Any await before the call drops activation and the API
+  // throws SecurityError or fails. Start the request first, then await anything else.
+  let localFontsPromise: Promise<Iterable<{ family?: string; fullName?: string; postscriptName?: string; style?: string }>> | null = null;
+  if ('queryLocalFonts' in window && typeof (window as any).queryLocalFonts === 'function') {
+    try {
+      localFontsPromise = (window as any).queryLocalFonts();
+    } catch (syncErr) {
+      console.warn('[Fonternate] queryLocalFonts threw synchronously:', syncErr);
+    }
+  }
+
+  // Let @font-face / web fonts register before DOM-based fallback (popup is tiny otherwise)
   try {
     if (document.fonts?.ready) {
       await document.fonts.ready;
@@ -46,52 +75,18 @@ export async function getInstalledFonts(): Promise<InstalledFont[]> {
     if (nativeFonts.length > 0) {
       console.log(`[Fonternate] ✅ Found ${nativeFonts.length} fonts via native messaging`);
       return nativeFonts;
-    } else {
-      console.log('[Fonternate] Native messaging returned 0 fonts, trying fallback...');
     }
+    console.log('[Fonternate] Native messaging returned 0 fonts, trying other methods...');
   } catch (error) {
     console.log('[Fonternate] Native messaging failed:', error);
     console.log('[Fonternate] Falling back to other methods...');
   }
-  
-  // Method 2: Try Font Access API (Chrome/Edge). Requires manifest permission "fontAccess".
-  // Note: navigator.permissions.query({ name: 'local-fonts' }) often throws in extension
-  // popups (unsupported name). That must NOT skip queryLocalFonts() — only a denied state should.
-  if ('queryLocalFonts' in window && typeof (window as any).queryLocalFonts === 'function') {
+
+  // Method 2: Font Access API — await the promise started above (web `local-fonts` permission; no Chrome manifest key).
+  if (localFontsPromise) {
     try {
-      try {
-        const permissionStatus = await (navigator as any).permissions?.query({
-          name: 'local-fonts' as PermissionName,
-        });
-        if (permissionStatus?.state === 'denied') {
-          console.warn('[Fonternate] Font Access API permission denied');
-          return getSystemFontsFallback();
-        }
-      } catch (permErr) {
-        console.log(
-          '[Fonternate] permissions.query(local-fonts) not used (unsupported or error); trying queryLocalFonts anyway:',
-          permErr
-        );
-      }
-
-      const fonts = await (window as any).queryLocalFonts();
-      const uniqueFamilies = new Map<string, InstalledFont>();
-
-      for (const font of fonts) {
-        const family = font.family || font.postscriptName?.split('-')[0] || 'Unknown';
-        const key = family.toLowerCase();
-        if (!uniqueFamilies.has(key)) {
-          uniqueFamilies.set(key, {
-            family: family,
-            fullName: font.fullName || font.postscriptName || family,
-            postscriptName: font.postscriptName,
-            style: font.style,
-          });
-        }
-      }
-
-      let result = Array.from(uniqueFamilies.values()).sort((a, b) => a.family.localeCompare(b.family));
-
+      const fonts = await localFontsPromise;
+      let result = installedFontsFromFontData(fonts);
       console.log(`[Fonternate] Found ${result.length} fonts via Font Access API`);
 
       if (result.length === 0) {
@@ -101,11 +96,9 @@ export async function getInstalledFonts(): Promise<InstalledFont[]> {
           result = mergeUniqueByFamily(result, extra);
         }
       }
-
       return result;
     } catch (error) {
       console.warn('[Fonternate] Font Access API failed:', error);
-      // Fall through to fallback
     }
   }
 

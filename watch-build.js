@@ -55,8 +55,8 @@ function build() {
   isBuilding = true;
   console.log('[Watch] 🔨 Building...');
 
-  // Always increment version, compile TS, run webpack
-  const buildSteps = 'node increment-version.js && tsc && webpack --mode production';
+  // Compile TS, run webpack (version is bumped only via npm run bump:patch)
+  const buildSteps = 'tsc && webpack --mode production';
 
   exec(buildSteps, (error) => {
     if (error) {

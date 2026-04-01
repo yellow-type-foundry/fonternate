@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getInstalledFonts, InstalledFont } from '../../utils/fontDetection';
+
+/** queryLocalFonts() requires a user gesture in Chrome; call only from pointer/focus handlers, not on mount. */
 
 interface FontNameInputProps {
   value: string;
@@ -23,26 +25,35 @@ export const FontNameInput: React.FC<FontNameInputProps> = ({
   // Use local state that syncs with prop when prop changes externally (e.g., after Reset)
   const [localValue, setLocalValue] = useState(value);
   const [installedFonts, setInstalledFonts] = useState<InstalledFont[]>([]);
-  const [fontsLoading, setFontsLoading] = useState(true);
+  const [fontsLoading, setFontsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [filteredFonts, setFilteredFonts] = useState<InstalledFont[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const isFocusedRef = useRef(false);
-  
-  // Load installed fonts on mount
-  useEffect(() => {
-    getInstalledFonts()
-      .then((fonts) => {
-        setInstalledFonts(fonts);
-        setFilteredFonts(fonts);
-      })
-      .catch((err) => {
-        console.error('[Fonternate] Failed to load installed fonts:', err);
-      })
-      .finally(() => {
-        setFontsLoading(false);
-      });
+  const hasLoadedFontListRef = useRef(false);
+  const fontListLoadInFlightRef = useRef(false);
+  const loadAttemptsRef = useRef(0);
+
+  const loadInstalledFontsWithGesture = useCallback(async () => {
+    if (hasLoadedFontListRef.current || fontListLoadInFlightRef.current) return;
+    if (loadAttemptsRef.current >= 2) return;
+    loadAttemptsRef.current += 1;
+    fontListLoadInFlightRef.current = true;
+    setFontsLoading(true);
+    try {
+      const fonts = await getInstalledFonts();
+      setInstalledFonts(fonts);
+      setFilteredFonts(fonts.slice(0, 10));
+      if (fonts.length > 0) {
+        hasLoadedFontListRef.current = true;
+      }
+    } catch (err) {
+      console.error('[Fonternate] Failed to load installed fonts:', err);
+    } finally {
+      setFontsLoading(false);
+      fontListLoadInFlightRef.current = false;
+    }
   }, []);
 
   // Sync localValue with prop when prop changes, but only if input is not focused (user not typing)
@@ -169,9 +180,14 @@ export const FontNameInput: React.FC<FontNameInputProps> = ({
         value={localValue}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
+        onPointerDown={() => {
+          // Pointer counts as user activation for queryLocalFonts(); focus alone can be flaky.
+          void loadInstalledFontsWithGesture();
+        }}
         onFocus={() => {
           isFocusedRef.current = true;
           setShowDropdown(true);
+          void loadInstalledFontsWithGesture();
         }}
         onBlur={() => {
           isFocusedRef.current = false;
@@ -233,7 +249,9 @@ export const FontNameInput: React.FC<FontNameInputProps> = ({
               {localValue.trim()
                 ? 'No matching fonts'
                 : installedFonts.length === 0
-                  ? "Can't load system fonts — type a name and press Enter."
+                  ? fontsLoading
+                    ? 'Loading fonts…'
+                    : 'Click the field above — local fonts load after you interact (Chrome requires this). Or type a name and press Enter.'
                   : 'No fonts to show'}
             </div>
           )}

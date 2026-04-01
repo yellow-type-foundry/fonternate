@@ -4,6 +4,18 @@ import { AppState, FontCapabilities, FontStyle, TextTransform } from '../types';
 import { getAppState, saveAppState, sendMessage, defaultAppState } from '../utils/chrome';
 import { parseFontName, buildFontName, getAvailableWeightSuffixes } from '../utils/fontUtils';
 import pkg from '../../package.json';
+
+/** Footer + chrome://extensions use manifest version; package.json is fallback (e.g. webpack dev UI). */
+function getDisplayedExtensionVersion(): string {
+  try {
+    if (typeof chrome !== 'undefined' && chrome.runtime?.getManifest) {
+      return chrome.runtime.getManifest().version;
+    }
+  } catch {
+    // non-extension context
+  }
+  return pkg.version;
+}
 import {
   FontNameInput,
   FontWeightSelector,
@@ -796,7 +808,7 @@ const Panel: React.FC = () => {
         </button>
       </div>
       <div className="footer-note">
-        Fonternate v{pkg.version} © 2026 LAMBAO. Find me at{' '}
+        Fonternate v{getDisplayedExtensionVersion()} © 2026 LAMBAO. Find me at{' '}
         <a href="https://instagram.com/lamg.bao" target="_blank" rel="noopener noreferrer">
           @lamg.bao
         </a>
